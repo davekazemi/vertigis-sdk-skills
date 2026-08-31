@@ -3,7 +3,7 @@
 ## 1. Activity Canonical Pattern (`src/activities/<Name>/main.ts`)
 
 ```typescript
-import type { IActivityHandler } from "@vertigis/workflow";
+import type { IActivityHandler, IActivityContext } from "@vertigis/workflow";
 
 /**
  * An interface that defines the inputs of the activity.
@@ -61,7 +61,7 @@ interface MyActivityOutputs {
  * @supportedApps VSW, EXB
  */
 export default class MyActivity implements IActivityHandler {
-  async execute(inputs: MyActivityInputs): Promise<MyActivityOutputs> {
+  async execute(inputs: MyActivityInputs, context?: IActivityContext): Promise<MyActivityOutputs> {
     const { showLogger = false } = inputs;
 
     // 1. Conditional Execution Check
@@ -96,7 +96,16 @@ export default class MyActivity implements IActivityHandler {
 
 ---
 
-## 2. Mandatory Activity Rules
+## 2. The `IActivityContext` Parameter
+
+The optional second parameter `context: IActivityContext` passed to `execute()` provides access to the workflow execution environment:
+- Accessing workflow runtime tracking and telemetry.
+- Inspecting active workflow instance ID.
+- Checking cancellation tokens for long-running async background operations.
+
+---
+
+## 3. Mandatory Activity Rules
 
 1. **Orchestrator Only**: `main.ts` should only contain the class definition, I/O interfaces, and top-level orchestration. Complex helper logic belongs in `utils/`.
 2. **Class Default Export**: The class must be exported as `export default class <Name>Activity`.
@@ -117,7 +126,7 @@ export default class MyActivity implements IActivityHandler {
 
 ---
 
-## 3. Splitting Complex Activities (`utils/`)
+## 4. Splitting Complex Activities (`utils/`)
 
 When `main.ts` would exceed ~150 lines or handles multiple domains:
 

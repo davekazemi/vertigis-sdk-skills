@@ -13,14 +13,22 @@ The model manages the component's state, participates in app configuration, and 
 
 ```typescript
 // src/components/MyWidget/MyWidgetModel.ts
-import { ComponentModelBase, serializable, importModel } from "@vertigis/web/models";
+import { ComponentModelBase, serializable, importModel, exportModel } from "@vertigis/web/models";
 import { MapModel } from "@vertigis/web/mapping";
 
+// Mark with @exportModel if child components need to import this model
+@exportModel
 @serializable
 export class MyWidgetModel extends ComponentModelBase {
-    // 1. Reactive and serializable property (configurable in app-config.json)
-    @serializable
+    // 1. Serializable properties (configurable in app-config.json)
+    @serializable(String)
     greetingText: string = "Hello VertiGIS!";
+
+    @serializable(Number)
+    refreshInterval: number = 30;
+
+    @serializable(Boolean)
+    autoStart: boolean = true;
 
     // 2. Observable runtime state (not saved in config)
     count: number = 0;
@@ -46,6 +54,20 @@ export class MyWidgetModel extends ComponentModelBase {
 }
 ```
 
+### Advanced `@serializable` Options
+You can provide type constructors or custom serializer/deserializer functions for complex properties:
+```typescript
+@serializable(Array)
+selectedIds: string[] = [];
+
+// Custom Serializer for Date objects
+@serializable({
+    serializer: (val: Date) => val?.toISOString(),
+    deserializer: (raw: string) => raw ? new Date(raw) : undefined
+})
+lastInspectedDate?: Date;
+```
+
 ---
 
 ## 2. Creating the React View (MUI + LayoutElement Required)
@@ -69,6 +91,9 @@ import {
     LayoutElement,
     LayoutElementProperties,
 } from "@vertigis/web/components";
+import { useUIContext, useService } from "@vertigis/web/ui";
+import { I18nService } from "@vertigis/web/i18n";
+import { ErrorBoundary } from "../../utils/ErrorBoundary";
 import { MyWidgetModel } from "./MyWidgetModel";
 
 interface MyWidgetProps extends LayoutElementProperties<MyWidgetModel> {
@@ -82,44 +107,59 @@ interface MyWidgetProps extends LayoutElementProperties<MyWidgetModel> {
 const MyWidget = observer(function MyWidget(props: MyWidgetProps): React.ReactElement {
     const { model, customConfigParam = "Default" } = props;
 
+    // Direct access to UI Context commands & services in React views
+    const { commands, operations } = useUIContext();
+    const i18n = useService<I18nService>("i18n");
+
+    const handleAction = async () => {
+        await commands.ui.displayNotification.execute({
+            title: i18n?.translate("widget-title") || "Action",
+            message: `Count incremented to ${model.count + 1}`,
+            status: "info"
+        });
+        model.increment();
+    };
+
     return (
         <LayoutElement {...props}>
-            <Box
-                sx={{
-                    p: 2,
-                    backgroundColor: "var(--primaryBackground)",
-                    borderRadius: "var(--borderRadius, 4px)",
-                }}
-            >
-                <Typography variant="h6" sx={{ color: "var(--primaryAccent)", mb: 1 }}>
-                    {model.greetingText}
-                </Typography>
-
-                <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-                    <Typography variant="body1" sx={{ color: "var(--primaryForeground)" }}>
-                        Current Count: {model.count}
+            <ErrorBoundary fallbackMessage="Widget failed to load.">
+                <Box
+                    sx={{
+                        p: 2,
+                        backgroundColor: "var(--primaryBackground)",
+                        borderRadius: "var(--borderRadius, 4px)",
+                    }}
+                >
+                    <Typography variant="h6" sx={{ color: "var(--primaryAccent)", mb: 1 }}>
+                        {model.greetingText}
                     </Typography>
-                    <Button
-                        variant="contained"
-                        onClick={() => model.increment()}
-                        sx={{
-                            backgroundColor: "var(--primaryAccent)",
-                            color: "var(--buttonForeground)",
-                            "&:hover": {
-                                backgroundColor: "var(--primaryAccentHover)",
-                            },
-                        }}
-                    >
-                        Increment
-                    </Button>
-                </Stack>
 
-                {model.map && (
-                    <Typography variant="caption" sx={{ color: "var(--secondaryForeground)" }}>
-                        Attached Map ID: {model.map.id}
-                    </Typography>
-                )}
-            </Box>
+                    <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+                        <Typography variant="body1" sx={{ color: "var(--primaryForeground)" }}>
+                            Current Count: {model.count}
+                        </Typography>
+                        <Button
+                            variant="contained"
+                            onClick={handleAction}
+                            sx={{
+                                backgroundColor: "var(--primaryAccent)",
+                                color: "var(--buttonForeground)",
+                                "&:hover": {
+                                    backgroundColor: "var(--primaryAccentHover)",
+                                },
+                            }}
+                        >
+                            Increment
+                        </Button>
+                    </Stack>
+
+                    {model.map && (
+                        <Typography variant="caption" sx={{ color: "var(--secondaryForeground)" }}>
+                            Attached Map ID: {model.map.id}
+                        </Typography>
+                    )}
+                </Box>
+            </ErrorBoundary>
         </LayoutElement>
     );
 });
@@ -127,14 +167,55 @@ const MyWidget = observer(function MyWidget(props: MyWidgetProps): React.ReactEl
 export default MyWidget;
 ```
 
-> [!IMPORTANT]
-> **`<LayoutElement {...props}>`**: Every component view MUST wrap its content inside `<LayoutElement>`, passing through all props. This enables the SDK's layout system (sizing, visibility, drag-drop in Designer).
->
-> **`observer()`**: Wrapping the component with `observer()` from `mobx-react-lite` ensures the view automatically re-renders whenever any MobX `@observable` or `@serializable` property on the model changes. Without this, model changes will NOT update the UI.
+---
+
+## 3. Creating and Registering Custom SVG Icons
+
+VertiGIS Studio Web SDK supports registering custom SVG icons for use in toolbars, menus, and components.
+
+### 1. Define Icon (`src/icons/CustomArrowIcon.tsx`)
+```tsx
+import React from "react";
+import createSvgIcon from "@vertigis/web/ui/icons/utils/createSvgIcon";
+
+export default createSvgIcon(
+    <path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2z" />
+);
+```
+
+### 2. Register Icon in `src/index.ts`
+```typescript
+import { LibraryRegistry } from "@vertigis/web/config";
+import CustomArrowIcon from "./icons/CustomArrowIcon";
+
+export default function (registry: LibraryRegistry): void {
+    registry.registerIcon({
+        id: "myorg-custom-arrow",
+        getComponentType: () => CustomArrowIcon
+    });
+}
+```
+
+### 3. Using Custom Icons in Views or App Config
+- **In React Views**:
+  ```tsx
+  import DynamicIcon from "@vertigis/web/ui/DynamicIcon";
+  <DynamicIcon src="myorg-custom-arrow" />
+  ```
+- **In `app-config.json` menus / buttons**:
+  ```json
+  {
+    "id": "my-tool-button",
+    "$type": "menu-item",
+    "title": "Custom Tool",
+    "icon": "myorg-custom-arrow",
+    "action": "custom.my-command"
+  }
+  ```
 
 ---
 
-## 3. Styling and Theming Rules
+## 4. Styling and Theming Rules
 
 - **Use the `sx` prop**: Apply styles inline using MUI's `sx` prop.
 - **Use CSS Variables (Tokens)**: NEVER invent hex colors. Always map styles to standard tokens:
@@ -155,7 +236,7 @@ export default MyWidget;
 
 ---
 
-## 4. Component Lifecycle Hooks
+## 5. Component Lifecycle Hooks
 
 | Hook | Timing | Purpose |
 | :--- | :--- | :--- |
@@ -166,10 +247,11 @@ export default MyWidget;
 
 ---
 
-## 5. UI Context and Component Services Injection
+## 6. UI Context and Component Services Injection
 
-Components can access application services and contexts directly:
+Components can access application services and contexts in two ways:
 
+### A. In Models via `@inject`
 ```typescript
 import { inject } from "@vertigis/web/services";
 import { I18nService } from "@vertigis/web/i18n";
@@ -192,13 +274,23 @@ export class MyWidgetModel extends ComponentModelBase {
 }
 ```
 
+### B. In React Functional Views via `useService` / `useUIContext`
+```tsx
+import { useService, useUIContext } from "@vertigis/web/ui";
+import { I18nService } from "@vertigis/web/i18n";
+
+export function HeaderView() {
+    const i18n = useService<I18nService>("i18n");
+    const { commands } = useUIContext();
+    // ...
+}
+```
+
 ---
 
-## 6. React Error Boundaries (Enterprise Pattern)
+## 7. React Error Boundaries (Enterprise Pattern)
 
-To prevent a single crashing widget from taking down the entire VertiGIS Web application, you should wrap custom widget contents in an Error Boundary. This is an enterprise standard for all custom components.
-
-Since React doesn't yet support functional Error Boundaries, you must create a standard class component in `src/utils/ErrorBoundary.tsx`:
+Wrap custom widget contents in an Error Boundary (`src/utils/ErrorBoundary.tsx`) to prevent a crashing component from taking down the VertiGIS Web application:
 
 ```tsx
 // src/utils/ErrorBoundary.tsx
@@ -245,20 +337,4 @@ export class ErrorBoundary extends React.Component<Props, State> {
         return this.props.children;
     }
 }
-```
-
-Then wrap your component view's content (inside the `LayoutElement`):
-
-```tsx
-import { ErrorBoundary } from "../../utils/ErrorBoundary";
-
-const MyWidget = observer(function MyWidget(props: MyWidgetProps) {
-    return (
-        <LayoutElement {...props}>
-            <ErrorBoundary fallbackMessage="Custom Widget failed to load.">
-                {/* Your actual widget content */}
-            </ErrorBoundary>
-        </LayoutElement>
-    );
-});
 ```

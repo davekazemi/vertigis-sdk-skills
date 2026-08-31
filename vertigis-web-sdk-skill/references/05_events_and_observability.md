@@ -151,3 +151,56 @@ export default LiveDataWidget;
 ```
 
 > ⚠️ Without `observer()`, the component will NOT re-render when `model.items` changes.
+
+---
+
+## 5. Reactive Side-Effects in Models & Services (`reaction`, `when`, `autorun`)
+
+In models and background services, you can trigger side-effects in response to observable state changes without relying on a React view:
+
+```typescript
+import { ComponentModelBase } from "@vertigis/web/models";
+import { observable, reaction, when, IReactionDisposer } from "mobx";
+
+export class DataSyncModel extends ComponentModelBase {
+    @observable
+    isOnline: boolean = false;
+
+    @observable
+    syncIntervalSeconds: number = 60;
+
+    private _disposers: IReactionDisposer[] = [];
+
+    protected async _onInitialize(): Promise<void> {
+        await super._onInitialize();
+
+        // 1. reaction: Run side-effect when a specific property changes
+        const intervalReaction = reaction(
+            () => this.syncIntervalSeconds,
+            (newInterval) => {
+                console.log(`Sync interval changed to ${newInterval}s. Resetting timer.`);
+                this.restartTimer(newInterval);
+            }
+        );
+        this._disposers.push(intervalReaction);
+
+        // 2. when: Run one-shot side-effect once a condition becomes true
+        when(
+            () => this.isOnline,
+            () => {
+                console.log("Device came online. Flushing queue...");
+                this.flushOfflineQueue();
+            }
+        );
+    }
+
+    protected async _onDestroy(): Promise<void> {
+        // Clean up all MobX reactions
+        this._disposers.forEach((dispose) => dispose());
+        await super._onDestroy();
+    }
+
+    private restartTimer(interval: number): void { /* ... */ }
+    private flushOfflineQueue(): void { /* ... */ }
+}
+```

@@ -57,5 +57,17 @@ This generates the production output in the `dist/` directory, typically includi
 - Keep runtime transient state as regular MobX `@observable` fields.
 - Clean up event subscriptions and intervals in `_onDestroy()`.
 
-### D. Third-Party Dependencies
-- For third-party npm packages (e.g., Chart.js, D3, lodash), configure webpack externals if they are already provided by VertiGIS runtime, or bundle them carefully into your library.
+### D. Third-Party Dependencies & Webpack Externals
+- **Externals provided by VertiGIS runtime**: The host application already provides core libraries. NEVER bundle duplicate copies of:
+  - `@vertigis/web`
+  - `@arcgis/core`
+  - `react` / `react-dom`
+  - `@mui/material`
+- **Bundling Utility Libraries**: For pure JavaScript utilities (e.g. `papaparse`, `canvas-confetti`, `qrcode`, `jspdf`), install them via `npm install <package>` and import them directly. They will be bundled into your `dist/main.js` output.
+- **Dynamic / Lazy Imports**: For heavy libraries (e.g. Chart.js, PDF generators), use dynamic `import()` to load them on demand only when the user opens the relevant widget or executes the action:
+  ```typescript
+  async function generateQRCode(text: string): Promise<string> {
+      const QRCode = await import("qrcode");
+      return QRCode.toDataURL(text);
+  }
+  ```

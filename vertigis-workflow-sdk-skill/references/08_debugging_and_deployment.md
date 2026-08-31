@@ -43,3 +43,25 @@ To test custom activities and form elements inside the VertiGIS Studio Workflow 
 4. Set URL to: `https://localhost:5000/activitypack.json`.
 5. Add Item Tag: `geocortex-workflow-activity-pack` (REQUIRED).
 6. Open **VertiGIS Studio Workflow Designer**; the custom activities and form elements will appear in the toolbox sidebar under their defined `@category`.
+
+---
+
+## 4. Third-Party Library Integration & Bundling
+
+When developing activities or form elements that require external JavaScript libraries (e.g. `papaparse` for CSV parsing, `qrcode` for QR rendering, `jspdf` for PDF export):
+
+1. **Install via npm**:
+   ```bash
+   npm install papaparse
+   npm install --save-dev @types/papaparse
+   ```
+2. **Direct Import**:
+   ```typescript
+   import Papa from "papaparse";
+   
+   export function parseCsvData(csvText: string): any[] {
+       const parsed = Papa.parse(csvText, { header: true });
+       return parsed.data;
+   }
+   ```
+3. **Do NOT install duplicate peer dependencies**: The Workflow host runtime already provides `@arcgis/core`, `react`, and `react-dom`. Never bundle your own duplicate versions of these host libraries.

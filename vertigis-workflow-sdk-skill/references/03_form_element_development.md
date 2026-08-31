@@ -8,15 +8,17 @@ A single `main.tsx` file defines both the component view and its registration ob
 // src/elements/<Name>/main.tsx
 import * as React from "react";
 import { FormElementProps, FormElementRegistration } from "@vertigis/workflow";
-import { Box, TextField } from "@mui/material";
+import { Box, TextField, Stack, Typography } from "@mui/material";
 
 /**
  * Interface defining the element's public props and state.
- * T is the type of value the element produces.
+ * T is the type of primary value the element produces.
  */
 export interface MyElementProps extends FormElementProps<string> {
   /** Custom configurable property */
   customPlaceholder?: string;
+  /** Secondary public output property */
+  secondaryStatus?: string;
 }
 
 /**
@@ -27,6 +29,7 @@ function MyElement(props: MyElementProps): React.ReactElement {
   const {
     value,
     setValue,
+    setProperty,
     customPlaceholder = "Enter value...",
     enabled = true,   // Always destructure with safe default
     visible = true,   // Always destructure with safe default
@@ -38,7 +41,13 @@ function MyElement(props: MyElementProps): React.ReactElement {
     return <></>;
   }
 
-  // 2. Render UI with standard prop wiring
+  const handleChange = (newVal: string) => {
+    setValue(newVal);
+    // Update secondary public property accessible in workflow
+    setProperty("secondaryStatus", newVal.length > 5 ? "Valid" : "Too short");
+  };
+
+  // 2. Render UI with standard prop wiring & accessibility
   return (
     <Box sx={{ py: 1 }}>
       <TextField
@@ -47,8 +56,8 @@ function MyElement(props: MyElementProps): React.ReactElement {
         placeholder={customPlaceholder}
         value={value ?? ""}
         disabled={!enabled}
-        inputProps={{ readOnly }}
-        onChange={(e) => setValue(e.currentTarget.value)}
+        inputProps={{ readOnly, "aria-label": "Custom Input Field" }}
+        onChange={(e) => handleChange(e.currentTarget.value)}
         sx={{
           backgroundColor: "var(--primaryBackground)",
           "& .MuiInputBase-input": {
@@ -80,15 +89,49 @@ const MyElementRegistration: FormElementRegistration<MyElementProps> = {
     visible: true,
     readOnly: false,
     customPlaceholder: "Enter text...",
+    secondaryStatus: undefined,
   }),
 };
 
 export default MyElementRegistration;
 ```
 
-### Firing Custom Events (`raiseEvent`)
+---
 
-If your form element needs to trigger custom logic in the workflow (e.g. a "Scan QR Code" button that executes a sub-workflow before returning), use `raiseEvent`. You must also declare the event using the `@event` block tag so the Designer knows it exists.
+## 2. Managing Multiple Public Outputs (`props.setProperty`)
+
+In addition to the primary `value` (updated via `props.setValue()`), form elements can expose multiple custom properties accessible to the workflow runtime:
+
+```tsx
+interface DateRangePickerProps extends FormElementProps<string> {
+    startDate?: string;
+    endDate?: string;
+    durationDays?: number;
+}
+
+function DateRangePicker(props: DateRangePickerProps) {
+    const { setValue, setProperty, enabled } = props;
+
+    const handleSelectRange = (start: string, end: string, days: number) => {
+        // 1. Set primary output string
+        setValue(`${start} to ${end}`);
+
+        // 2. Set individual named public properties
+        setProperty("startDate", start);
+        setProperty("endDate", end);
+        setProperty("durationDays", days);
+    };
+
+    // ...
+}
+```
+In the Workflow Designer, you can read these secondary values at any time using the **Get Form Element Property** activity by specifying property name (e.g. `"startDate"`).
+
+---
+
+## 3. Firing Custom Events (`raiseEvent` with Structured Payload)
+
+If your form element needs to trigger custom logic or branching in the workflow (e.g. a "Scan Barcode" or "Calculate Route" button), use `props.raiseEvent("custom", eventData)`.
 
 ```tsx
 import * as React from "react";
@@ -100,19 +143,30 @@ export interface ScannerProps extends FormElementProps<string> {}
 /**
  * @displayName Barcode Scanner
  * @description A custom scanner element.
- * @event custom-scan-started Fired when the user clicks scan.
+ * @event custom Fired when a barcode scan completes.
  */
 function ScannerElement(props: ScannerProps) {
-    const { raiseEvent, enabled } = props;
+    const { raiseEvent, setValue, enabled } = props;
 
-    const handleScanClick = async () => {
-        // Trigger the custom event in the workflow
-        await raiseEvent("custom-scan-started");
+    const handleScanComplete = async (scannedCode: string) => {
+        setValue(scannedCode);
+
+        // Raise structured custom event for Workflow Designer branching
+        await raiseEvent("custom", {
+            customEventType: "scanCompleted",
+            barcode: scannedCode,
+            timestamp: new Date().toISOString()
+        });
     };
 
     return (
-        <Button variant="contained" disabled={!enabled} onClick={handleScanClick}>
-            Start Scan
+        <Button
+            variant="contained"
+            disabled={!enabled}
+            onClick={() => handleScanComplete("123456789")}
+            sx={{ backgroundColor: "var(--primaryAccent)", color: "var(--buttonForeground)" }}
+        >
+            Simulate Scan
         </Button>
     );
 }
@@ -120,23 +174,30 @@ function ScannerElement(props: ScannerProps) {
 
 ---
 
-## 2. Form Element Props API Reference
+## 4. Form Element Props API Reference
 
 | Prop / Callback | Type | Purpose |
 | :--- | :--- | :--- |
 | `value` | `T` | The primary public value (retrieved via *Get Form Element Property*). |
-| `setValue(v: T)` | `(v: T) => void` | Updates the public value in workflow runtime. |
-| `setProperty(name, v)` | `(k: string, v: any) => void` | Updates named public property. |
-| `raiseEvent(name, data)` | `(name: string, data: any) => void` | Fires a custom event to the workflow. |
+| `setValue(v: T)` | `(v: T) => void` | Updates the primary public value in workflow runtime. |
+| `setProperty(name, v)` | `(k: string, v: any) => void` | Updates named secondary public properties. |
+| `raiseEvent(name, data)` | `(name: string, data: any) => void` | Fires a custom event to the workflow runtime. |
 | `enabled` | `boolean` | Interactivity toggle (*Set Form Element* → `enabled`). |
 | `visible` | `boolean` | Visibility toggle (*Set Form Element* → `visible`). |
 | `readOnly` | `boolean` | Read-only mode toggle (*Set Form Element* → `readOnly`). |
 
 ---
 
-## 3. CRITICAL — Wiring Standard Props to MUI
+## 5. State Separation: Local State (`useState`) vs Public State (`setValue` / `setProperty`)
 
-The workflow runtime injects `enabled`, `visible`, and `readOnly` automatically. However, they only work if you **destructure them** and **forward them** to the UI:
+- **Use Local State (`useState`)**: For transient UI interactions only (e.g. `isDropdownOpen`, `activeTab`, `hoveredIndex`, `tempSearchQuery`). This state does NOT need to be seen by the workflow.
+- **Use Public State (`setValue` / `setProperty`)**: For data that workflow steps or other form elements need to inspect (e.g. `selectedFeatureId`, `formData`, `status`).
+
+---
+
+## 6. CRITICAL — Wiring Standard Props to MUI
+
+The workflow runtime injects `enabled`, `visible`, and `readOnly` automatically. You MUST forward them to the UI:
 
 | Prop | Target HTML / MUI Prop | Rule |
 | :--- | :--- | :--- |
@@ -146,12 +207,9 @@ The workflow runtime injects `enabled`, `visible`, and `readOnly` automatically.
 
 ---
 
-## 4. CRITICAL — Surviving Tab Changes & Remounts
+## 7. CRITICAL — Surviving Tab Changes & Remounts
 
-When workflow forms switch tabs or reload steps, form elements may unmount and remount.
-
-### State Persistence Rules
-1. **Always persist critical state in `setValue(...)` or public props** instead of keeping it strictly in local React `useState`.
-2. **Rehydrate on mount**: On initial render/mount, read from `props.value` before falling back to initial defaults.
+When workflow forms switch tabs or reload steps, form elements unmount and remount.
+1. **Always persist critical state in `setValue(...)` or `setProperty(...)`** instead of keeping it strictly in local `useState`.
+2. **Rehydrate on mount**: On initial render/mount, initialize state from `props.value` before falling back to initial defaults.
 3. **Never overwrite saved state with initial defaults** on remount.
-4. If managing complex collections (e.g. drawn geometries, selected layers, table rows), serialize sufficient metadata into `value` so the UI completely restores on remount.
