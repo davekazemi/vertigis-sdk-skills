@@ -1,224 +1,216 @@
-# VertiGIS Studio Web SDK: Commands & Operations
+# VertiGIS Studio Web SDK: Commands & Operations Reference
 
 ## Overview
-Commands and Operations are the core message bus and decoupled execution mechanism across VertiGIS Studio Web.
+Commands and Operations form the primary decoupled message bus across VertiGIS Studio Web:
 
-- **Command**: Performs an action / side-effect (asynchronous, returns `void` or `Promise<void>`).
-- **Operation**: Calculates or retrieves data (synchronous or asynchronous, returns a value / `Promise<T>`).
-
----
-
-## 1. Registering Custom Commands and Operations
-
-Custom commands and operations are registered in `src/index.ts` via the `LibraryRegistry`.
-
-### Custom Command Registration
-```typescript
-// src/index.ts
-import { LibraryRegistry } from "@vertigis/web/config";
-
-export default function (registry: LibraryRegistry): void {
-    registry.registerCommandHandler({
-        name: "custom.highlight-feature",
-        // Optional guard: can this command execute right now?
-        canExecute: (args, context) => {
-            return !!args?.featureId;
-        },
-        // Execution logic
-        execute: async (args, context) => {
-            const { featureId } = args;
-            console.log(`Highlighting feature ${featureId}`);
-            // Perform actions...
-        }
-    });
-}
-```
-
-### Custom Operation Registration
-```typescript
-// src/index.ts
-import { LibraryRegistry } from "@vertigis/web/config";
-
-export default function (registry: LibraryRegistry): void {
-    registry.registerOperationHandler({
-        name: "custom.calculate-buffer",
-        execute: async (args, context) => {
-            const { geometry, distance } = args;
-            // Calculations or queries...
-            const bufferedGeometry = await geometryService.buffer(geometry, distance);
-            return { buffer: bufferedGeometry };
-        }
-    });
-}
-```
+- **Command**: Performs an action or side-effect. Asynchronous, returns `Promise<void>`.
+- **Operation**: Calculates or retrieves data. Returns a typed value `Promise<TOutput>`.
 
 ---
 
-## 2. Invoking Commands & Operations from Code
+## 1. Invoking Built-in Commands & Operations in Code
 
-In Models (`ComponentModelBase`, `ItemModelBase`) and Services (`ServiceBase`), access the message bus via `this.messages`:
+In any Component Model (`ComponentModelBase`, `ItemModelBase`) or Service (`ServiceBase`), use `this.messages`:
 
-### A. Executing Commands
-Commands are organized by namespace under `this.messages.commands.<namespace>.<camelCaseCommandName>`:
+### A. Strongly-Typed Built-in Namespaces
 ```typescript
-// UI Notification
+// 1. Command execution (void return)
 await this.messages.commands.ui.displayNotification.execute({
-    title: "Success",
-    message: "Operation completed successfully.",
-    status: "success" // "info" | "success" | "warning" | "error"
+    title: "Layer Loaded",
+    message: "Inspection layer successfully refreshed.",
+    status: "success"
 });
 
-// UI Component Activation / Toggle
-await this.messages.commands.ui.activate.execute({ target: "custom-panel" });
-await this.messages.commands.ui.deactivate.execute({ target: "custom-panel" });
-await this.messages.commands.ui.toggle.execute({ target: "custom-panel" });
-
-// Map Navigation
-await this.messages.commands.map.zoomToExtent.execute({
-    target: {
-        xmin: -123.4,
-        ymin: 48.4,
-        xmax: -123.3,
-        ymax: 48.5,
-        spatialReference: { wkid: 4326 }
-    }
+// 2. Operation execution (with expected return value)
+const didConfirm: boolean = await this.messages.operations.ui.confirm.execute({
+    title: "Delete Feature",
+    message: "Are you sure you want to delete this record?"
 });
 
-// Run a VertiGIS Workflow
-await this.messages.commands.workflow.run.execute({
-    id: "my-inspection-workflow",
-    inputs: {
-        FacilityID: "FAC-1002",
-        Source: "Web SDK Component"
-    }
-});
+if (didConfirm) {
+    await this.messages.commands.edit.deleteFeatures.execute({
+        layer: inspectionLayer,
+        features: [selectedFeature]
+    });
+}
 ```
 
-### B. Executing Operations
-Operations return values and are located under `this.messages.operations.<namespace>.<camelCaseOperationName>`:
+### B. Generic Execution by String ID
+When invoking custom commands/operations or ones without direct SDK typings:
 ```typescript
-// Query ArcGIS Features
-const queryResult = await this.messages.operations.arcgis.queryFeatures.execute({
-    url: "https://services.arcgis.com/.../FeatureServer/0",
-    where: "STATUS = 'ACTIVE'"
-});
+// Execute custom Command by string ID
+await this.messages.command<MyInputType>("custom.my-command").execute(inputArgs);
 
-// Convert results to CSV / export
-const csvData = await this.messages.operations.results.convertToCsv.execute({
-    features: queryResult.features
-});
+// Execute custom Operation by string ID with <InputType, OutputType>
+const result: MyOutputType = await this.messages.operation<MyInputType, MyOutputType>(
+    "custom.my-calculation"
+).execute(inputArgs);
 ```
 
 ---
 
-## 3. Invoking from App Configuration (`app-config.json`)
+## 2. Comprehensive Built-in Operations (with Expected Output)
 
-Commands and operations can be bound to buttons, menus, and events in `app-config.json`:
+Operations produce output data that can be consumed in code or passed to subsequent commands in a pipeline.
 
-### Simple Action Binding
-```json
-{
-  "id": "zoom-button",
-  "$type": "menu-item",
-  "title": "Zoom to Initial View",
-  "action": "map.zoom-to-initial-viewpoint"
-}
-```
+| Operation Name | Namespace | Description | Expected Input Arguments | Expected Output Type |
+| :--- | :--- | :--- | :--- | :--- |
+| `ui.confirm` | `ui` | Displays a confirmation modal dialog | `{ title?: string, message: string, okText?: string, cancelText?: string }` | `boolean` (true = confirmed, false = cancelled) |
+| `ui.prompt` | `ui` | Displays an input prompt dialog | `{ title?: string, message: string, defaultValue?: string }` | `string \| null` |
+| `arcgis.query-features` | `arcgis` | Executes a feature query against ArcGIS REST / FeatureLayer | `{ url: string, where?: string, geometry?: __esri.Geometry, outFields?: string[], spatialRelationship?: string }` | `__esri.FeatureSet` (`{ features: __esri.Graphic[] }`) |
+| `arcgis.get-portal-item` | `arcgis` | Fetches metadata for an ArcGIS Portal/AGOL item | `{ id: string, portalUrl?: string }` | `__esri.PortalItem` |
+| `results.convert-to-csv` | `results` | Serializes a set of features into CSV format | `{ features: __esri.Graphic[], columns?: string[] }` | `Blob \| string` |
+| `results.get-selected` | `results` | Retrieves currently selected items from results panel | `{}` | `__esri.Graphic[]` |
+| `map.get-visible-extent` | `map` | Gets current visible extent bounding box | `{ map?: MapModel }` | `__esri.Extent` |
+| `map.get-scale` | `map` | Gets current map scale ratio | `{ map?: MapModel }` | `number` (e.g. `24000`) |
+| `auth.get-user` | `auth` | Retrieves current authenticated Portal user profile | `{}` | `__esri.PortalUser \| null` |
+| `geometry.buffer` | `geometry` | Computes spatial buffer around geometries | `{ geometry: __esri.Geometry, distance: number, unit?: string }` | `__esri.Polygon \| __esri.Polygon[]` |
+| `geometry.project` | `geometry` | Projects geometries into a target spatial reference | `{ geometries: __esri.Geometry[], outSpatialReference: __esri.SpatialReference }` | `__esri.Geometry[]` |
 
-### Action with Explicit Arguments
-```json
-{
-  "id": "notify-button",
-  "$type": "menu-item",
-  "title": "Show Info",
-  "action": {
-    "name": "ui.display-notification",
-    "arguments": {
-      "title": "Site Information",
-      "message": "Processing site data...",
-      "status": "info"
+---
+
+## 3. Comprehensive Built-in Commands (Side-Effects)
+
+Commands perform actions and side-effects.
+
+### UI Namespace (`ui.*`)
+| Command Name | Description | Expected Arguments |
+| :--- | :--- | :--- |
+| `ui.activate` | Activates a component, tab, or view container | `{ target: string }` |
+| `ui.deactivate` | Deactivates a component or closes view | `{ target: string }` |
+| `ui.toggle` | Toggles component active state | `{ target: string }` |
+| `ui.display-notification` | Shows a toast notification message | `{ title?: string, message: string, status?: "info"\|"success"\|"warning"\|"error" }` |
+| `ui.display-alert` | Shows a modal alert dialog | `{ title?: string, message: string }` |
+| `ui.set-theme` | Sets application theme mode | `"light" \| "dark" \| string` |
+| `ui.open-panel` | Opens a specific side panel or drawer | `{ target: string }` |
+| `ui.close-panel` | Closes an active side panel | `{ target?: string }` |
+
+### Map Namespace (`map.*`)
+| Command Name | Description | Expected Arguments |
+| :--- | :--- | :--- |
+| `map.zoom-to-viewpoint` | Zooms map to an Esri Viewpoint object | `{ maps?: MapModel[], viewpoint: __esri.Viewpoint }` |
+| `map.zoom-to-extent` | Zooms map to an envelope/extent | `{ maps?: MapModel[], target: __esri.Extent \| object }` |
+| `map.zoom-to-features` | Centers and zooms map to fit graphics | `{ maps?: MapModel[], features: __esri.Graphic[] }` |
+| `map.zoom-to-initial-viewpoint` | Resets map to initial configured extent | `{ maps?: MapModel[] }` |
+| `map.zoom-in` | Zooms map in one increment level | `{ maps?: MapModel[] }` |
+| `map.zoom-out` | Zooms map out one increment level | `{ maps?: MapModel[] }` |
+| `map.center-at` | Centers map at a target Point geometry | `{ maps?: MapModel[], geometry: __esri.Point }` |
+| `map.draw-graphic` | Draws temporary graphic on temporary map layer | `{ maps?: MapModel[], geometry: __esri.Geometry, symbol?: __esri.Symbol, attributes?: Record<string, any> }` |
+| `map.clear-graphics` | Clears all temporary graphics from map | `{ maps?: MapModel[] }` |
+| `map.set-layer-visibility` | Sets visibility on/off for a layer | `{ layerId: string, visible: boolean }` |
+| `map.refresh-layer` | Forces redraw/refresh of a dynamic layer | `{ layerId: string }` |
+
+### Highlights Namespace (`highlights.*`)
+| Command Name | Description | Expected Arguments |
+| :--- | :--- | :--- |
+| `highlights.pulse` | Pulses / flashes visual highlight on features | `{ maps?: MapModel[], features: __esri.Graphic[] }` |
+| `highlights.add` | Adds features to persistent highlight layer | `{ maps?: MapModel[], features: __esri.Graphic[] }` |
+| `highlights.remove` | Removes specific features from highlights | `{ maps?: MapModel[], features: __esri.Graphic[] }` |
+| `highlights.clear` | Clears all active highlights | `{ maps?: MapModel[] }` |
+
+### Results Namespace (`results.*`)
+| Command Name | Description | Expected Arguments |
+| :--- | :--- | :--- |
+| `results.display-details` | Opens feature detail card/pane | `{ features: __esri.Graphic[] }` |
+| `results.remove` | Removes features from active results list | `{ features: __esri.Graphic[] }` |
+| `results.clear` | Clears all results from results view | `{}` |
+| `results.highlight` | Highlights results on the active map | `{ features: __esri.Graphic[] }` |
+
+### Workflow Namespace (`workflow.*`)
+| Command Name | Description | Expected Arguments |
+| :--- | :--- | :--- |
+| `workflow.run` | Executes a VertiGIS Studio Workflow | `{ id?: string, url?: string, inputs?: Record<string, any> }` |
+
+### Edit Namespace (`edit.*`)
+| Command Name | Description | Expected Arguments |
+| :--- | :--- | :--- |
+| `edit.add-feature` | Adds a new feature graphic to a feature layer | `{ layer: __esri.FeatureLayer, feature: __esri.Graphic }` |
+| `edit.update-feature` | Updates an existing feature graphic | `{ layer: __esri.FeatureLayer, feature: __esri.Graphic }` |
+| `edit.delete-features` | Deletes feature graphics from layer | `{ layer: __esri.FeatureLayer, features: __esri.Graphic[] }` |
+
+### System & Auth Namespaces (`system.*`, `auth.*`)
+| Command Name | Description | Expected Arguments |
+| :--- | :--- | :--- |
+| `auth.sign-in` | Initiates ArcGIS / Portal authentication | `{ provider?: string }` |
+| `auth.sign-out` | Signs out the current user session | `{}` |
+| `system.download-file` | Triggers browser file download from Blob/string | `{ data: Blob \| string, fileName: string, mimeType?: string }` |
+| `system.open-url` | Navigates to a URL | `{ url: string, target?: "_blank" \| "_self" }` |
+| `system.copy-to-clipboard` | Copies text string to user clipboard | `{ text: string }` |
+
+---
+
+## 4. Implementing Custom Commands & Operations
+
+### Decorator Pattern in Models & Services
+```typescript
+import { ComponentModelBase, serializable } from "@vertigis/web/models";
+import { command, operation, canExecute } from "@vertigis/web/messaging";
+
+@serializable
+export class InspectionModel extends ComponentModelBase {
+    // 1. Custom Command Implementation
+    @command("custom.start-inspection", { targetInactive: true })
+    protected async _handleStartInspection(args: { inspectionId: string }): Promise<void> {
+        console.log("Starting inspection:", args.inspectionId);
     }
-  }
+
+    // 2. canExecute Guard for the Command
+    @canExecute("custom.start-inspection")
+    protected _canStartInspection(args: { inspectionId: string }): boolean {
+        return Boolean(args?.inspectionId);
+    }
+
+    // 3. Custom Operation Implementation (returns value)
+    @operation("custom.calculate-score")
+    protected _calculateScore(args: { answers: number[] }): number {
+        return args.answers.reduce((acc, curr) => acc + curr, 0);
+    }
 }
 ```
 
-### Command Chaining (Sequential Execution & Pipelining)
-When using an array, operations pass their output to the next command/operation in the chain:
+### Registration in `src/index.ts`
+```typescript
+import { LibraryRegistry } from "@vertigis/web/config";
+
+export default function (registry: LibraryRegistry): void {
+    // Register command handler directly or associate with model itemType
+    registry.registerCommandHandler({
+        name: "custom.standalone-command",
+        canExecute: (args) => Boolean(args?.id),
+        execute: async (args) => {
+            // Standalone command execution
+        }
+    });
+
+    registry.registerOperationHandler({
+        name: "custom.standalone-operation",
+        execute: async (args) => {
+            return { result: "calculated value" };
+        }
+    });
+}
+```
+
+---
+
+## 5. Declarative Pipelines & Command Chaining in `app-config.json`
+
+Commands and operations can be chained sequentially in `app-config.json`. The output of an operation is automatically passed as input to the next command/operation in the chain:
+
 ```json
 {
-  "id": "export-action",
+  "id": "export-button",
   "$type": "menu-item",
-  "title": "Export Results to CSV",
+  "title": "Export Selected Features",
   "action": [
+    "results.get-selected",
     "results.convert-to-csv",
-    "system.download-file"
+    {
+      "name": "system.download-file",
+      "arguments": {
+        "fileName": "exported_features.csv"
+      }
+    }
   ]
 }
 ```
-
----
-
-## 4. Built-in Commands & Operations Reference Guide
-
-### UI Namespace (`ui.*`)
-| Name | Type | Description | Key Arguments |
-| :--- | :--- | :--- | :--- |
-| `ui.activate` | Command | Activates a component, tab, or view | `{ target: "component-id" }` |
-| `ui.deactivate` | Command | Deactivates a component | `{ target: "component-id" }` |
-| `ui.toggle` | Command | Toggles active state of a component | `{ target: "component-id" }` |
-| `ui.display-notification` | Command | Displays a toast notification | `{ title?: string, message: string, status?: "info"\|"success"\|"warning"\|"error" }` |
-| `ui.display-alert` | Command | Displays a modal alert dialog | `{ title: string, message: string }` |
-| `ui.close-panel` | Command | Closes an active side panel | `{ target?: string }` |
-
-### Map Namespace (`map.*`)
-| Name | Type | Description | Key Arguments |
-| :--- | :--- | :--- | :--- |
-| `map.zoom-to-viewpoint` | Command | Zooms map to a Viewpoint | `{ viewpoint: __esri.Viewpoint }` |
-| `map.zoom-to-extent` | Command | Zooms map to an extent envelope | `{ target: __esri.Extent \| object }` |
-| `map.zoom-to-features` | Command | Zooms to one or more graphics/features | `{ maps?: MapModel[], features: __esri.Graphic[] }` |
-| `map.zoom-in` | Command | Zooms in one level | `{ maps?: MapModel[] }` |
-| `map.zoom-out` | Command | Zooms out one level | `{ maps?: MapModel[] }` |
-| `map.zoom-to-initial-viewpoint` | Command | Returns map to initial configured view | `{ maps?: MapModel[] }` |
-| `map.draw-graphic` | Command | Draws temporary graphic on the map | `{ geometry: __esri.Geometry, symbol?: __esri.Symbol }` |
-| `map.clear-graphics` | Command | Clears all temporary graphics | `{ maps?: MapModel[] }` |
-| `map.set-layer-visibility` | Command | Sets visibility of a specific layer | `{ layerId: string, visible: boolean }` |
-| `map.refresh-layer` | Command | Refreshes data for a dynamic layer | `{ layerId: string }` |
-
-### Highlights Namespace (`highlights.*`)
-| Name | Type | Description | Key Arguments |
-| :--- | :--- | :--- | :--- |
-| `highlights.pulse` | Command | Pulses/flashes feature highlights | `{ features: __esri.Graphic[] }` |
-| `highlights.add` | Command | Adds features to persistent highlight set | `{ features: __esri.Graphic[] }` |
-| `highlights.clear` | Command | Clears all active highlights | `{}` |
-
-### Results Namespace (`results.*`)
-| Name | Type | Description | Key Arguments |
-| :--- | :--- | :--- | :--- |
-| `results.display-details` | Command | Opens feature details pane for selected item | `{ features: __esri.Graphic[] }` |
-| `results.remove` | Command | Removes a feature from the results list | `{ features: __esri.Graphic[] }` |
-| `results.clear` | Command | Clears all results from the results table/list | `{}` |
-| `results.convert-to-csv` | Operation | Converts feature attributes to CSV string/blob | `{ features: __esri.Graphic[] }` |
-
-### Workflow Namespace (`workflow.*`)
-| Name | Type | Description | Key Arguments |
-| :--- | :--- | :--- | :--- |
-| `workflow.run` | Command | Runs a VertiGIS Workflow by ID/URL with inputs | `{ id: string, url?: string, inputs?: Record<string, any> }` |
-
-### Auth Namespace (`auth.*`)
-| Name | Type | Description | Key Arguments |
-| :--- | :--- | :--- | :--- |
-| `auth.sign-in` | Command | Initiates ArcGIS / Portal sign-in | `{ provider?: string }` |
-| `auth.sign-out` | Command | Signs out current user and clears session | `{}` |
-| `auth.get-user` | Operation | Retrieves current authenticated user profile | `{}` |
-
-### System Namespace (`system.*`)
-| Name | Type | Description | Key Arguments |
-| :--- | :--- | :--- | :--- |
-| `system.download-file` | Command | Triggers browser download for a blob or URL | `{ data: Blob \| string, fileName: string }` |
-| `system.open-url` | Command | Opens a URL in a new or current tab | `{ url: string, target?: "_blank" \| "_self" }` |
-
-### ArcGIS Namespace (`arcgis.*`)
-| Name | Type | Description | Key Arguments |
-| :--- | :--- | :--- | :--- |
-| `arcgis.query-features` | Operation | Queries an ArcGIS FeatureLayer or REST endpoint | `{ url: string, where?: string, geometry?: __esri.Geometry }` |
-| `arcgis.get-portal-item` | Operation | Fetches portal item metadata | `{ id: string, portalUrl?: string }` |
