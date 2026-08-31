@@ -1,0 +1,10 @@
+# Ignore raw scraped data and python scraping scripts
+**/references/raw/
+**/scripts/
+**/*.py
+**/*.pyc
+__pycache__/
+.env
+node_modules/
+dist/
+build/
