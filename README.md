@@ -7,23 +7,32 @@ AI Skills are robust, system-prompt-style markdown documents that provide an LLM
 
 ## 🚀 How to Install
 
-### Option 1: One-Line Global Install (For Antigravity / Agentic IDEs)
-If you are using an agentic IDE that supports global skill directories (like Antigravity), you can install these skills globally on your machine with a single command:
+### Option 1: Using the Vercel `skills` CLI (Recommended)
+If you are using an agentic IDE like Antigravity, Cursor, or Cline, you can use the Open Agent Skills ecosystem (`npx skills`) to install these directly.
 
+To install the **Web SDK Skill**:
+```bash
+npx skills@latest add davekazemi/vertigis-sdk-skills --skill=vertigis-web-sdk-skill
+```
+
+To install the **Workflow SDK Skill**:
+```bash
+npx skills@latest add davekazemi/vertigis-sdk-skills --skill=vertigis-workflow-sdk-skill
+```
+
+### Option 2: One-Line Global Install (For Antigravity)
+If you want to install them globally on your machine so the AI knows VertiGIS for all your projects:
 ```bash
 mkdir -p ~/.gemini/config/skills && cd ~/.gemini/config/skills && git clone https://github.com/davekazemi/vertigis-sdk-skills.git
 ```
-*The agent will automatically discover these skills for all your future projects.*
 
-### Option 2: Project-Specific Install (Git Submodule)
-If you want to share these skills with your development team, add them as a Git Submodule directly into your project's agent configuration folder:
-
+### Option 3: Project-Specific Git Submodule
+Share these skills with your dev team by adding them directly into your project's agent configuration folder:
 ```bash
 git submodule add https://github.com/davekazemi/vertigis-sdk-skills.git .agents/skills/vertigis-sdk-skills
 ```
-*When your team clones the repo, the AI assistant will automatically load the VertiGIS rules.*
 
-### Option 3: Manual System Prompt (ChatGPT / Claude)
+### Option 4: Manual System Prompt (ChatGPT / Claude)
 If you are using a standard web chat interface:
 1. Open the `SKILL.md` file from either folder.
 2. Copy the entire contents.
