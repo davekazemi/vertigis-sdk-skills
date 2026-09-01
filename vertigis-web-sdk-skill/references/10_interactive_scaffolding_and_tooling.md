@@ -7,21 +7,28 @@ When interacting with a developer, the agent follows an interactive consultation
 
 ## 1. Interactive Onboarding & Discovery Flow
 
-```
-                     [Skill Triggered]
-                             │
-                             ▼
-              [Scan Workspace for Project Files]
-                             │
-            ┌────────────────┴────────────────┐
-            ▼                                 ▼
-   [Existing Project Found]          [Empty / New Workspace]
-            │                                 │
-   • Ask user intent:                • Ask Target (Component vs Service)
-     1. Review Code (Categorized)    • Ask Name & Custom Namespace
-     2. Add New Component            • Ask SSL Certificate Strategy
-     3. Add New Service              • Scaffold & Create Helper Scripts
-     4. Generate Tooling Scripts
+```mermaid
+flowchart TD
+    A[Skill Triggered] --> B[Scan Workspace for Project Files]
+
+    B --> C{Workspace State}
+
+    C -->|Existing Project| D
+    C -->|Empty / New| E
+
+    subgraph D [Existing Workspace]
+        D1[Review Code Categorized]
+        D2[Add New Component]
+        D3[Add New Service]
+        D4[Generate Tooling Scripts]
+    end
+
+    subgraph E [Grill-Me Discovery]
+        E1[Target Component vs Service]
+        E2[Name & Custom Namespace]
+        E3[HTTPS SSL Strategy]
+        E4[Scaffold Project & Scripts]
+    end
 ```
 
 ---

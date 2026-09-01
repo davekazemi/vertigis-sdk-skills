@@ -11,21 +11,28 @@ AI Skills are robust, system-prompt-style markdown documents that provide an LLM
 
 When an AI assistant is equipped with these skills, it doesn't just guess or output arbitrary boilerplate. It actively follows an interactive consultation flow:
 
-```
-                     [Skill Triggered]
-                             │
-                             ▼
-              [Scan Workspace for Project Files]
-                             │
-            ┌────────────────┴────────────────┐
-            ▼                                 ▼
-   [Existing Project Found]          [Empty / New Workspace]
-            │                                 │
-   • Interactive Menu:               • "Grill-Me" Discovery Interview:
-     1. Review Code (Categorized)       1. Target Extension Type
-     2. Add New Component / Service     2. Name & Custom Namespace
-     3. Add New Activity / Element      3. HTTPS SSL Certificate Strategy
-     4. Generate Tooling Scripts        4. Scaffold Project & Scripts
+```mermaid
+flowchart TD
+    A[Skill Triggered] --> B[Scan Workspace for Project Files]
+
+    B --> C{Workspace State}
+
+    C -->|Existing Project| D
+    C -->|Empty / New| E
+
+    subgraph D [Existing Workspace]
+        D1[Review Code]
+        D2[Add Component / Service]
+        D3[Add Activity / Element]
+        D4[Generate Tooling Scripts]
+    end
+
+    subgraph E [Grill-Me Discovery]
+        E1[Target Extension Type]
+        E2[Name & Custom Namespace]
+        E3[HTTPS SSL Strategy]
+        E4[Scaffold Project & Scripts]
+    end
 ```
 
 ### 1. Existing Workspace Mode
