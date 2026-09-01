@@ -5,6 +5,44 @@ This repository contains expertly crafted AI instructions ("Skills") designed to
 ## What are AI Skills?
 AI Skills are robust, system-prompt-style markdown documents that provide an LLM with strict architectural guardrails, best practices, and canonical code patterns. By providing these documents as context to an AI agent (like GitHub Copilot, ChatGPT, or Google Gemini), you ensure the AI generates code that strictly adheres to the VertiGIS SDK standards rather than hallucinating generic React or TypeScript code.
 
+---
+
+## 💡 Usage & Interactive Consultation ("Grill-Me" Protocol)
+
+When an AI assistant is equipped with these skills, it doesn't just guess or output arbitrary boilerplate. It actively follows an interactive consultation flow:
+
+```
+                     [Skill Triggered]
+                             │
+                             ▼
+              [Scan Workspace for Project Files]
+                             │
+            ┌────────────────┴────────────────┐
+            ▼                                 ▼
+   [Existing Project Found]          [Empty / New Workspace]
+            │                                 │
+   • Interactive Menu:               • "Grill-Me" Discovery Interview:
+     1. Review Code vs 9 Rules          1. Target Extension Type
+     2. Add New Component / Service     2. Name & Custom Namespace
+     3. Add New Activity / Element      3. HTTPS SSL Certificate Strategy
+     4. Generate Tooling Scripts        4. Scaffold Project & Scripts
+```
+
+### 1. Existing Workspace Mode
+If the agent detects an existing VertiGIS project, it prompts you before modifying files:
+- **Code Review Audit**: Audits your existing codebase against 9 critical rules (MUI enforcement, no CSS modules, `<LayoutElement>` wrappers, MobX `observer()`, Error Boundaries, `try/catch` error handling, WCAG accessibility, and ArcGIS AMD star imports).
+- **Extension Scaffolding**: Scaffolds new Components and Services (Web SDK) or new Activities and Form Elements (Workflow SDK) adhering to canonical directory structures.
+- **Tooling Generation**: Generates automated port-killing start scripts and build scripts.
+
+### 2. New Workspace Mode ("Grill-Me" Interview)
+If the workspace is uninitialized, the agent conducts a focused questionnaire to align on requirements before generating code:
+- **Extension Type**: Clarifies whether you are targeting Web Components, Web Services, Workflow Activities, or Custom Form Elements.
+- **Naming & Namespace**: Establishes unique namespaces (e.g. `myorg.custom`), category groupings, and display names for VertiGIS Designer.
+- **HTTPS SSL Setup**: Offers to generate local self-signed SSL certificates via OpenSSL (`openssl req -x509 -newkey rsa:2048 ...`) or configure paths to your organization's certificates.
+- **Port Management Scripts**: Automatically creates `start.bat` / `start.sh` (which kills any lingering processes occupying dev ports 3000 or 5000 using `netstat`/`taskkill` before running `npm start`) and `build.bat` / `build.sh`.
+
+---
+
 ## 🚀 How to Install
 
 ### Option 1: Using the Vercel `skills` CLI (Recommended)
@@ -50,14 +88,19 @@ Teaches the AI how to build custom components, services, and commands for VertiG
 - MobX `observer()` wrappers for reactive state
 - `<LayoutElement>` wrappers for Designer integration
 - React Error Boundaries for enterprise reliability
+- Custom SVG Icon registration (`createSvgIcon`, `registerIcon`)
+- Comprehensive Command and Operation invocation (`useUIContext`, `useService`, `$ref`, `$eval`)
 
 ### 2. VertiGIS Workflow SDK Skill (`vertigis-workflow-sdk-skill/`)
 Teaches the AI how to build custom activities and form elements for VertiGIS Studio Workflow.
 **Key Enforcements:**
-- Strict `IActivityHandler` typing
+- Strict `IActivityHandler` typing and `IActivityContext` parameter handling
 - Defensive `try/catch` orchestration in activities
+- Form element multi-output properties (`props.setProperty()`) and structured custom events (`props.raiseEvent()`)
 - Form element accessibility (ARIA labels, keyboard navigation)
 - ArcGIS AMD module loader rules (Star Imports vs Default Imports)
+
+---
 
 ## Data Exclusions
 Note that the raw HTML/Markdown scraped from the official VertiGIS Developer Center, as well as the Python scraping scripts used to generate these references, are intentionally excluded via `.gitignore` to keep the skill repository clean and focused strictly on AI instructions.
