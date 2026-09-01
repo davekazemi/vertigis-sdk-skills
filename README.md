@@ -106,6 +106,7 @@ Teaches the AI how to build custom activities and form elements for VertiGIS Stu
 - Defensive `try/catch` orchestration in activities
 - Form element multi-output properties (`props.setProperty()`) and structured custom events (`props.raiseEvent()`)
 - Form element accessibility (ARIA labels, keyboard navigation)
+- React Component Decomposition (`hooks/`, `components/`, `utils/`) for complex form elements
 - ArcGIS AMD module loader rules (Star Imports vs Default Imports)
 
 ---

@@ -65,6 +65,7 @@ When performing a code review or when asked to **"Review my code"**, audit the c
 - **MUI Component Mandate**: Views MUST use `@mui/material` components (`<Box>`, `<TextField>`, `<Button>`). Bare HTML input tags (`<input>`, `<button>`, `<div>`) break styling and theme consistency.
 - **Wiring Standard Props**: MUST destructure and wire `enabled`, `visible`, and `readOnly` to MUI properties (`disabled={!enabled}`, `inputProps={{ readOnly }}`).
 - **Registration ID Match**: `FormElementRegistration.id` MUST match the Custom Type name in Workflow Designer.
+- **ArcGIS AMD Star Imports**: Any ArcGIS utility/function modules used in the element MUST use star imports (`import * as projection from "@arcgis/core/geometry/projection"`). Default imports trigger `Unsupported AMD module` loader failures.
 - **Barrel Export**: Form element must be exported from `src/index.ts` with a name ending in `Registration`.
 
 #### 🟡 Warnings (State & UX Deficiencies)
@@ -72,10 +73,10 @@ When performing a code review or when asked to **"Review my code"**, audit the c
 - **Color Token Violations**: Avoid hardcoded hex/RGB colors. Map styling to VertiGIS CSS variable tokens (`var(--primaryBackground)`, `var(--primaryForeground)`).
 - **Multiple Output Handling**: When producing secondary outputs, use `props.setProperty("propName", value)` so they are accessible via *Get Form Element Property*.
 
-#### 🔵 Recommendations (Accessibility, Cleanliness & Events)
+#### 🔵 Recommendations (Accessibility, Cleanliness & Decomposition)
+- **React Component Decomposition**: When a form element exceeds ~150 lines or manages multi-step state, decompose it into `hooks/` (custom React hooks for state/effects), `components/` (stateless presentation sub-components), and `utils/` (types & helper functions).
 - **WCAG Accessibility (a11y)**: Add `aria-label`, `aria-pressed`, and keyboard event handlers (`onKeyDown` for Space/Enter keys) on interactive components.
 - **Structured Custom Events**: Dispatch custom events using structured payloads: `props.raiseEvent("custom", { customEventType: "eventName", data: ... })`.
-- **Component Decomposition**: Split complex elements into `hooks/`, `components/`, and `utils/`.
 
 ---
 
