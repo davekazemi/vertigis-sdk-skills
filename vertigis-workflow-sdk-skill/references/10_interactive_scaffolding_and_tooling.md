@@ -18,10 +18,10 @@ When interacting with a developer, the agent follows an interactive consultation
    [Existing Project Found]          [Empty / New Workspace]
             │                                 │
    • Ask user intent:                • Ask Target (Activity vs Form Element)
-     1. Review Code against Best Practices
-     2. Add New Activity
-     3. Add New Form Element
-     4. Generate Tooling Scripts (start.bat / build.bat)
+     1. Review Code against Rules    • Ask Name, Category & Display Name
+     2. Add New Activity             • Ask SSL Certificate Strategy
+     3. Add New Form Element         • Scaffold & Create Helper Scripts
+     4. Generate Tooling Scripts
 ```
 
 ---

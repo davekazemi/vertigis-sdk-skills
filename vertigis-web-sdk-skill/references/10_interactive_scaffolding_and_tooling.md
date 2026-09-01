@@ -17,12 +17,11 @@ When interacting with a developer, the agent follows an interactive consultation
             ▼                                 ▼
    [Existing Project Found]          [Empty / New Workspace]
             │                                 │
-   • Ask user intent:                • Ask Target Component/Service
+   • Ask user intent:                • Ask Target (Component vs Service)
      1. Review Code against Rules    • Ask Name & Custom Namespace
      2. Add New Component            • Ask SSL Certificate Strategy
      3. Add New Service              • Scaffold & Create Helper Scripts
-     4. Add New Form Element/Activity
-     5. Generate Tooling Scripts
+     4. Generate Tooling Scripts
 ```
 
 ---
