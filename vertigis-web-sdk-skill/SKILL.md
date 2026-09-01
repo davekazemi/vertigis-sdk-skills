@@ -39,7 +39,7 @@ You MUST adhere to the following rules without exception:
 ## 5. Interactive Consultation Protocol (Grill-Me Mode)
 When the user triggers this skill:
 1. **Detect Project**: Scan the workspace to check if an existing VertiGIS project exists (`package.json`, `@vertigis/*`, `app/app.json`).
-2. **If Existing Project Found**: Ask whether the user wants to **[Review Code]**, **[Add New Component/Service]**, or **[Generate Scripts]**.
+2. **If Existing Project Found**: Ask whether the user wants to **[Review Code]**, **[Add New Component]**, **[Add New Service]**, **[Add New Workflow Form Element / Activity]**, or **[Generate Scripts]**.
 3. **If New / Uninitialized Workspace**: Conduct an interactive interview:
    - Ask for extension type (Component vs Service) and custom namespace.
    - Ask for HTTPS Certificate strategy (generate with OpenSSL vs custom paths).
