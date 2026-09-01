@@ -97,6 +97,7 @@ Teaches the AI how to build custom components, services, and commands for VertiG
 - React Error Boundaries for enterprise reliability
 - Custom SVG Icon registration (`createSvgIcon`, `registerIcon`)
 - Comprehensive Command and Operation invocation (`useUIContext`, `useService`, `$ref`, `$eval`)
+- ArcGIS AMD module loader rules (Star Imports for utilities vs Default Imports for classes)
 
 ### 2. VertiGIS Workflow SDK Skill (`vertigis-workflow-sdk-skill/`)
 Teaches the AI how to build custom activities and form elements for VertiGIS Studio Workflow.

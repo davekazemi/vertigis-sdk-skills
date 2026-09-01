@@ -149,3 +149,16 @@ export default function (registry: LibraryRegistry): void {
     });
 }
 ```
+
+---
+
+## 4. ArcGIS API for JavaScript Import Rules (AMD vs ES Modules)
+
+The VertiGIS Web runtime uses an AMD module loader for ArcGIS modules. You MUST follow these import rules:
+
+| Module Type | Import Pattern | Example | Why? |
+| :--- | :--- | :--- | :--- |
+| **Classes / Constructors** | Default Import | `import Graphic from "@arcgis/core/Graphic";`<br>`import Point from "@arcgis/core/geometry/Point";` | Classes have a default constructor export. |
+| **Utility / Function-Only Modules** | **Star Import (`* as`)** | `import * as projection from "@arcgis/core/geometry/projection";`<br>`import * as geometryEngine from "@arcgis/core/geometry/geometryEngine";` | These modules have no default export; default import triggers runtime `Unsupported AMD module` errors. |
+| **TypeScript Types** | Ambient `__esri.*` | `geometry: __esri.Geometry;`<br>`layer: __esri.FeatureLayer;` | Do not import types as values. |
+
