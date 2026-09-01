@@ -338,3 +338,51 @@ export class ErrorBoundary extends React.Component<Props, State> {
     }
 }
 ```
+
+---
+
+## 8. VertiGIS Web Component Hooks (`@vertigis/web/ui`)
+
+In addition to MobX `observer()`, VertiGIS Studio Web provides dedicated React hooks for granular property watching, collection observation, and event bus subscriptions:
+
+| Hook | Purpose | Example |
+| :--- | :--- | :--- |
+| `useWatchAndRerender(target, prop \| props[])` | Watches one or more observable model properties and triggers a re-render when they change. | `useWatchAndRerender(model, "hidden");`<br>`useWatchAndRerender(model, ["count", "status"]);` |
+| `useWatchCollectionAndRerender(collection)` | Watches an ArcGIS `Collection` (`__esri.Collection`) for add/remove/reorder events and triggers a re-render. | `useWatchCollectionAndRerender(model.map.layers);` |
+| `useWatch(target, prop, callback)` | Watches an observable property for mutations and executes a side-effect callback. | `useWatch(model, "selectedId", (newId, oldId) => { fetchDetails(newId); });` |
+| `useWatchInit(target, prop, callback)` | Same as `useWatch`, but also runs immediately upon initial mount. | `useWatchInit(model, "activeFilter", (filter) => { applyFilter(filter); });` |
+| `useSubscribeAndRerender(event)` | Subscribes to an application event bus event and triggers a re-render when fired. | `useSubscribeAndRerender(messages.events.map.click);` |
+| `useSubscribe(event, callback)` | Subscribes to an event bus event and executes a callback function. | `useSubscribe(messages.events.auth.signedIn, (user) => { initUser(user); });` |
+
+### Example: Using `useWatchAndRerender` in a Functional View
+```tsx
+import React from "react";
+import { LayoutElement, LayoutElementProperties } from "@vertigis/web/components";
+import { useWatchAndRerender } from "@vertigis/web/ui";
+import { Box, Typography, Button } from "@mui/material";
+import { MyWidgetModel } from "./MyWidgetModel";
+
+export default function MyWidget(props: LayoutElementProperties<MyWidgetModel>) {
+    const { model } = props;
+
+    // Granularly watch specific model property for re-renders
+    useWatchAndRerender(model, "hidden");
+
+    return (
+        <LayoutElement {...props}>
+            {!model.hidden ? (
+                <Box sx={{ p: 2, backgroundColor: "var(--primaryBackground)" }}>
+                    <Typography variant="body1">Content is visible!</Typography>
+                    <Button variant="contained" onClick={() => (model.hidden = true)}>
+                        Hide
+                    </Button>
+                </Box>
+            ) : (
+                <Button variant="outlined" onClick={() => (model.hidden = false)}>
+                    Show
+                </Button>
+            )}
+        </LayoutElement>
+    );
+}
+```
