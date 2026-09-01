@@ -36,12 +36,22 @@ You MUST adhere to the following rules without exception:
 - Output clean, uncommented code (except for standard JSDoc block tags).
 - If multiple files are needed (e.g. Model, View, index.ts), separate them logically.
 
+## 5. Interactive Consultation Protocol (Grill-Me Mode)
+When the user triggers this skill:
+1. **Detect Project**: Scan the workspace to check if an existing VertiGIS project exists (`package.json`, `@vertigis/*`, `app/app.json`).
+2. **If Existing Project Found**: Ask whether the user wants to **[Review Code]**, **[Add New Component/Service]**, or **[Generate Scripts]**.
+3. **If New / Uninitialized Workspace**: Conduct an interactive interview:
+   - Ask for extension type (Component vs Service) and custom namespace.
+   - Ask for HTTPS Certificate strategy (generate with OpenSSL vs custom paths).
+   - Generate `start.bat` / `start.sh` (which kills stale port processes and runs `npm start`) and `build.bat` / `build.sh`.
+
 ---
 
 ## Quick Reference & Table of Contents
 
 | Topic | Reference Guide | Key Focus Areas |
 | :--- | :--- | :--- |
+| **Interactive Tooling** | [Scaffolding & Scripts](./references/10_interactive_scaffolding_and_tooling.md) | Discovery flow, code audit checklist, OpenSSL SSL certificates, `start.bat`, `build.bat`. |
 | **Architecture & CLI** | [Overview & Concepts](./references/01_overview_and_concepts.md) | System model, CLI scaffolding, project structure, `src/index.ts`. |
 | **Custom Components** | [Components Guide](./references/02_components.md) | Component models (`*Model.ts`), React views (`*.tsx`), `LayoutElement`, `observer()`, MUI usage. |
 | **Custom Services** | [Services Guide](./references/03_services.md) | Singletons, `ServiceBase`, state management, background timers, service injection. |

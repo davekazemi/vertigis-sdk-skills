@@ -33,12 +33,22 @@ You MUST adhere to the following rules without exception:
 - Output clean, uncommented code (except for standard JSDoc block tags).
 - If multiple files are needed, separate them logically.
 
+## 5. Interactive Consultation Protocol (Grill-Me Mode)
+When the user triggers this skill:
+1. **Detect Project**: Scan the workspace to check if an existing VertiGIS Workflow project exists (`package.json`, `@vertigis/workflow`, `src/activities`, `src/elements`).
+2. **If Existing Project Found**: Ask whether the user wants to **[Review Code]**, **[Add New Activity / Form Element]**, or **[Generate Scripts]**.
+3. **If New / Uninitialized Workspace**: Conduct an interactive interview:
+   - Ask for target extension type (Activity vs Form Element), name, category, and display name.
+   - Ask for HTTPS Certificate strategy (generate with OpenSSL vs custom paths).
+   - Generate `start.bat` / `start.sh` (which kills stale port 5000 processes and runs `npm start`) and `build.bat` / `build.sh`.
+
 ---
 
 ## Quick Reference & Table of Contents
 
 | Topic | Reference Document | Key Focus Areas |
 | :--- | :--- | :--- |
+| **Interactive Tooling** | [Scaffolding & Scripts](./references/10_interactive_scaffolding_and_tooling.md) | Discovery flow, code audit checklist, OpenSSL SSL certificates, `start.bat`, `build.bat`. |
 | **Project Structure** | [Project Structure & Rules](./references/01_project_structure_and_rules.md) | Standard folders (`activities/`, `elements/`), naming rules, top-level barrel `src/index.ts`. |
 | **Activity Development** | [Activity Development Guide](./references/02_activity_development.md) | Canonical pattern, I/O interfaces, `runActivity` skip logic, `showLogger`, `utils/` folder splitting. |
 | **Form Element Development** | [Form Element Guide](./references/03_form_element_development.md) | Canonical `main.tsx`, props API, wiring standard props (`enabled`, `visible`, `readOnly`), MUI enforcement. |
