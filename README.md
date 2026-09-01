@@ -60,9 +60,14 @@ To install the **Web SDK Skill**:
 npx skills@latest add davekazemi/vertigis-sdk-skills --skill=vertigis-web-sdk-skill
 ```
 
-To install the **Workflow SDK Skill**:
+To install the **Workflow SDK Skill** (TypeScript):
 ```bash
 npx skills@latest add davekazemi/vertigis-sdk-skills --skill=vertigis-workflow-sdk-skill
+```
+
+To install the **Workflow .NET SDK Skill** (C# / .NET):
+```bash
+npx skills@latest add davekazemi/vertigis-sdk-skills --skill=vertigis-workflow-dotnet-skill
 ```
 
 ### Option 2: One-Line Global Install (For Antigravity)
@@ -79,7 +84,7 @@ git submodule add https://github.com/davekazemi/vertigis-sdk-skills.git .agents/
 
 ### Option 4: Manual System Prompt (ChatGPT / Claude)
 If you are using a standard web chat interface:
-1. Open the `SKILL.md` file from either folder.
+1. Open the `SKILL.md` file from any of the three skill folders.
 2. Copy the entire contents.
 3. Paste it into your LLM's "Custom Instructions", "System Prompt", or simply as your first message in the chat.
 
@@ -100,7 +105,7 @@ Teaches the AI how to build custom components, services, and commands for VertiG
 - ArcGIS AMD module loader rules (Star Imports for utilities vs Default Imports for classes)
 
 ### 2. VertiGIS Workflow SDK Skill (`vertigis-workflow-sdk-skill/`)
-Teaches the AI how to build custom activities and form elements for VertiGIS Studio Workflow.
+Teaches the AI how to build custom activities and form elements for VertiGIS Studio Workflow in TypeScript.
 **Key Enforcements:**
 - Strict `IActivityHandler` typing and `IActivityContext` parameter handling
 - Defensive `try/catch` orchestration in activities
@@ -108,6 +113,16 @@ Teaches the AI how to build custom activities and form elements for VertiGIS Stu
 - Form element accessibility (ARIA labels, keyboard navigation)
 - React Component Decomposition (`hooks/`, `components/`, `utils/`) for complex form elements
 - ArcGIS AMD module loader rules (Star Imports vs Default Imports)
+
+### 3. VertiGIS Workflow .NET SDK Skill (`vertigis-workflow-dotnet-skill/`)
+Teaches the AI how to build custom activities and form elements in C# for VertiGIS Studio Mobile, Desktop (ArcGIS Pro), and Workflow Server.
+**Key Enforcements:**
+- Strict `IActivityHandler` implementation with `Task<IDictionary<string, object?>> Execute(...)`
+- Mobile Form Elements with XAML + `ContentComponent` and `RegisterCustomFormElementBase`
+- Desktop (ArcGIS Pro) activities executing on worker threads via `QueuedTask.Run()`
+- Headless on-premises Workflow Server activities with `[assembly: WorkflowActivities]`
+- Companion TypeScript activity stubs (`@supportedApps VSM, VSD, VSS`) for Designer toolbox integration
+
 
 ---
 
