@@ -1,7 +1,7 @@
-# VertiGIS Studio Workflow SDK: Interactive Scaffolding, Certificates & Tooling
+# VertiGIS Studio Workflow SDK: Interactive Scaffolding, Code Reviews & Tooling
 
 ## Overview
-When interacting with a developer, the agent follows an interactive consultation protocol ("Grill-Me" mode) to discover project requirements, verify SSL certificates, and generate convenience process management scripts.
+When interacting with a developer, the agent follows an interactive consultation protocol ("Grill-Me" mode) to discover project requirements, verify SSL certificates, and audit existing code with categorized severity levels.
 
 ---
 
@@ -18,7 +18,7 @@ When interacting with a developer, the agent follows an interactive consultation
    [Existing Project Found]          [Empty / New Workspace]
             │                                 │
    • Ask user intent:                • Ask Target (Activity vs Form Element)
-     1. Review Code against Rules    • Ask Name, Category & Display Name
+     1. Review Code (Categorized)    • Ask Name, Category & Display Name
      2. Add New Activity             • Ask SSL Certificate Strategy
      3. Add New Form Element         • Scaffold & Create Helper Scripts
      4. Generate Tooling Scripts
@@ -26,21 +26,49 @@ When interacting with a developer, the agent follows an interactive consultation
 
 ---
 
-## 2. Automated Code Review Checklist (Best Practices)
+## 2. Categorized Code Review Audit Framework
 
-When the user asks to **"Review my code"**, audit the workflow codebase against these 9 strict criteria:
+When performing a code review or when asked to **"Review my code"**, audit the codebase according to the specific extension type and categorize findings by severity level:
 
-| # | Checkpoint | Rule / Requirement | Severity |
-| :--- | :--- | :--- | :--- |
-| 1 | **MUI Mandate for Form Elements** | Form Element views must use `@mui/material` components. NO bare HTML tags (`<div>`, `<button>`, `<input>`). | 🔴 Critical |
-| 2 | **No CSS Modules / Inline Styles** | No `.css` files. Styling must use MUI `sx` prop with CSS variable tokens (`var(--primaryBackground)`). | 🔴 Critical |
-| 3 | **Wire Standard Props** | Form Elements must destructure and wire `enabled`, `visible`, and `readOnly` (`disabled={!enabled}`, `inputProps={{ readOnly }}`). | 🔴 Critical |
-| 4 | **Inline Literal Dropdowns** | Activity input union types must be written *inline* (e.g. `type: 'a' \| 'b' \| string;`) so Designer renders dropdowns. | 🔴 Critical |
-| 5 | **ArcGIS Star Imports** | Utility modules (`projection`, `geometryEngine`) must use star imports: `import * as projection from "@arcgis/core/geometry/projection"`. | 🔴 Critical |
-| 6 | **Defensive Error Handling** | Activity `execute()` must wrap logic in `try/catch` and throw clean `Error` instances. | 🔴 Critical |
-| 7 | **Multiple Outputs Support** | Use `props.setProperty()` for secondary public outputs alongside primary `setValue()`. | 🟡 Medium |
-| 8 | **Accessibility (a11y)** | Form Elements must have `aria-label`, `aria-pressed`, and keyboard handlers (`onKeyDown`). | 🟡 Medium |
-| 9 | **Tab Remount Resilience** | Initialize state from `props.value` before defaults so form state survives tab changes. | 🟡 Medium |
+### ⚡ A. Workflow Activity Review (`IActivityHandler`)
+
+#### 🔴 Critical (Breaking Issues & Runtime Failures)
+- **Defensive `try/catch` Error Handling**: The `execute()` method MUST wrap core execution logic in a `try/catch` block and throw structured `Error` instances. Uncaught exceptions crash the workflow execution runtime.
+- **Inline Dropdown Literals**: Input properties intended as dropdowns in Workflow Designer MUST use inline string literal unions (e.g. `type: 'a' | 'b' | string;`). Extracting to external type aliases breaks Designer dropdown recognition.
+- **ArcGIS AMD Star Imports**: Utility/function modules (`projection`, `geometryEngine`) must use star imports (`import * as projection from "@arcgis/core/geometry/projection"`).
+- **Strict Return Types**: `execute()` must return a strictly typed `Promise<TOutputs>` interface, NEVER `any` or `Promise<any>`.
+- **Barrel Export**: Activity must be exported from `src/index.ts` with a name ending in `Activity`.
+
+#### 🟡 Warnings (Execution & Resilience Deficiencies)
+- **Missing `runActivity` Guard**: Activities should check `inputs.runActivity !== false` and return safe empty defaults if bypassed.
+- **Missing `@required` Tags**: Mandatory input parameters must be annotated with `@required`.
+- **Missing Toolbox Metadata**: The class must include `@category`, `@defaultName`, `@helpUrl`, and `@supportedApps`.
+- **Blocking Operations**: Avoid synchronous blocking loops; use asynchronous helpers for I/O and heavy computations.
+
+#### 🔵 Recommendations (Cleanliness, Maintainability & Debuggability)
+- **Debug Flag (`showLogger`)**: Include optional `showLogger?: boolean` input for conditional console logging.
+- **Helper Extraction**: If `main.ts` exceeds ~150 lines, split domain helpers into `utils/<domain>Helpers.ts`.
+- **JSDoc Documentation**: Annotate all input and output fields with `@displayName` and `@description`.
+
+---
+
+### 🎨 B. Workflow Form Element Review (`FormElementProps` + `FormElementRegistration`)
+
+#### 🔴 Critical (Breaking Issues & Runtime Failures)
+- **MUI Component Mandate**: Views MUST use `@mui/material` components (`<Box>`, `<TextField>`, `<Button>`). Bare HTML input tags (`<input>`, `<button>`, `<div>`) break styling and theme consistency.
+- **Wiring Standard Props**: MUST destructure and wire `enabled`, `visible`, and `readOnly` to MUI properties (`disabled={!enabled}`, `inputProps={{ readOnly }}`).
+- **Registration ID Match**: `FormElementRegistration.id` MUST match the Custom Type name in Workflow Designer.
+- **Barrel Export**: Form element must be exported from `src/index.ts` with a name ending in `Registration`.
+
+#### 🟡 Warnings (State & UX Deficiencies)
+- **State Persistence (Tab Remounts)**: Critical workflow state MUST be saved in `props.setValue()` or `props.setProperty()` rather than local React `useState`. State stored only in `useState` is lost when navigating between form tabs.
+- **Color Token Violations**: Avoid hardcoded hex/RGB colors. Map styling to VertiGIS CSS variable tokens (`var(--primaryBackground)`, `var(--primaryForeground)`).
+- **Multiple Output Handling**: When producing secondary outputs, use `props.setProperty("propName", value)` so they are accessible via *Get Form Element Property*.
+
+#### 🔵 Recommendations (Accessibility, Cleanliness & Events)
+- **WCAG Accessibility (a11y)**: Add `aria-label`, `aria-pressed`, and keyboard event handlers (`onKeyDown` for Space/Enter keys) on interactive components.
+- **Structured Custom Events**: Dispatch custom events using structured payloads: `props.raiseEvent("custom", { customEventType: "eventName", data: ... })`.
+- **Component Decomposition**: Split complex elements into `hooks/`, `components/`, and `utils/`.
 
 ---
 
@@ -55,7 +83,7 @@ openssl req -x509 -newkey rsa:2048 -keyout certs/key.pem -out certs/cert.pem -da
 ```
 
 ### Option B — Custom Certificate Path
-If the user provides an existing certificate, configure `package.json`:
+Configure `package.json`:
 ```json
 {
   "scripts": {
@@ -68,9 +96,7 @@ If the user provides an existing certificate, configure `package.json`:
 
 ## 4. Helper Scripts Templates
 
-To prevent "Port 5000 already in use" errors during development, scaffold these scripts in the project root:
-
-### `start.bat` (Windows Port Killer & Starter)
+### `start.bat` (Windows Port 5000 Killer & Starter)
 ```cmd
 @echo off
 set PORT=5000
@@ -95,7 +121,7 @@ if %ERRORLEVEL% EQU 0 (
 )
 ```
 
-### `start.sh` (Linux / macOS Port Killer & Starter)
+### `start.sh` (Linux / macOS Port 5000 Killer & Starter)
 ```bash
 #!/bin/bash
 PORT=5000

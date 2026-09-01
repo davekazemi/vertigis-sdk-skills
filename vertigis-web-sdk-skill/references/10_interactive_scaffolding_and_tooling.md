@@ -1,7 +1,7 @@
-# VertiGIS Studio Web SDK: Interactive Scaffolding, Certificates & Tooling
+# VertiGIS Studio Web SDK: Interactive Scaffolding, Code Reviews & Tooling
 
 ## Overview
-When interacting with a developer, the agent follows an interactive consultation protocol ("Grill-Me" mode) to discover project requirements, verify SSL certificates, and generate convenience process management scripts.
+When interacting with a developer, the agent follows an interactive consultation protocol ("Grill-Me" mode) to discover project requirements, verify SSL certificates, and audit existing code with categorized severity levels.
 
 ---
 
@@ -18,7 +18,7 @@ When interacting with a developer, the agent follows an interactive consultation
    [Existing Project Found]          [Empty / New Workspace]
             │                                 │
    • Ask user intent:                • Ask Target (Component vs Service)
-     1. Review Code against Rules    • Ask Name & Custom Namespace
+     1. Review Code (Categorized)    • Ask Name & Custom Namespace
      2. Add New Component            • Ask SSL Certificate Strategy
      3. Add New Service              • Scaffold & Create Helper Scripts
      4. Generate Tooling Scripts
@@ -26,27 +26,52 @@ When interacting with a developer, the agent follows an interactive consultation
 
 ---
 
-## 2. Automated Code Review Checklist (Best Practices)
+## 2. Categorized Code Review Audit Framework
 
-When the user asks to **"Review my code"**, audit the codebase against these 9 strict criteria:
+When performing a code review or when asked to **"Review my code"**, audit the codebase according to the specific extension type and categorize findings by severity level:
 
-| # | Checkpoint | Rule / Requirement | Severity |
-| :--- | :--- | :--- | :--- |
-| 1 | **MUI Mandate** | React views must use `@mui/material` components. NO bare HTML tags (`<div>`, `<button>`, `<span>`). | 🔴 Critical |
-| 2 | **No CSS Modules** | No `.css` / `.module.css` files. Styling must use MUI `sx` prop with CSS variable tokens (`var(--primaryBackground)`). | 🔴 Critical |
-| 3 | **`<LayoutElement>` Wrapper** | All component views must wrap their JSX inside `<LayoutElement {...props}>`. | 🔴 Critical |
-| 4 | **MobX `observer()`** | Component views reading model state must be wrapped with `observer()` from `mobx-react-lite`. | 🔴 Critical |
-| 5 | **Designer Integration** | Props interface must extend `LayoutElementProperties<TModel>`. | 🔴 Critical |
-| 6 | **ArcGIS Star Imports** | Utility modules (`projection`, `geometryEngine`) must use star imports: `import * as projection from "@arcgis/core/geometry/projection"`. | 🔴 Critical |
-| 7 | **Error Boundaries** | Custom React views must be wrapped in an `ErrorBoundary` fallback. | 🟡 Medium |
-| 8 | **Memory Cleanup** | Subscriptions and timers must be cleaned up in `_onDestroy()`. | 🟡 Medium |
-| 9 | **Accessibility (a11y)** | Interactive buttons/inputs must have `aria-label` or `aria-labelledby`. | 🟡 Medium |
+### 🧩 A. Web Component Review (`ComponentModelBase` + React View)
+
+#### 🔴 Critical (Breaking Issues & Runtime Failures)
+- **`<LayoutElement>` Wrapper**: React view MUST wrap all JSX inside `<LayoutElement {...props}>`. Omitting this breaks SDK layout slotting, sizing, and Designer drag-and-drop.
+- **MobX `observer()`**: React view MUST be wrapped with `observer()` from `mobx-react-lite` if reading model properties. Without it, model observable changes will not trigger re-renders.
+- **Designer Integration**: Props interface MUST extend `LayoutElementProperties<TModel>` so parameters are exposed to Web Designer.
+- **ArcGIS AMD Star Imports**: Utility/function modules (`projection`, `geometryEngine`) must use star imports (`import * as projection from "@arcgis/core/geometry/projection"`). Default imports cause `Unsupported AMD module` errors.
+- **Host Peer Dependencies**: NEVER bundle duplicate copies of `@vertigis/web`, `@arcgis/core`, `react`, or `@mui/material`.
+
+#### 🟡 Warnings (Architectural & State Deficiencies)
+- **Missing Error Boundary**: Custom widget contents should be wrapped in an `<ErrorBoundary>` to prevent a single component crash from breaking the entire application layout.
+- **Color Token Violations**: Avoid hardcoded hex/RGB colors. Map all styling to VertiGIS CSS variable tokens (`var(--primaryBackground)`, `var(--primaryForeground)`).
+- **CSS Modules / Custom CSS**: Avoid creating `.css` or `.module.css` files. Use MUI's `sx` prop referencing CSS tokens.
+- **Resource Leaks in Lifecycle**: Any event subscriptions, background intervals, or MobX reactions created in `_onInitialize()` MUST be disposed in `_onDestroy()`.
+- **Complex `@serializable` Types**: Non-primitive properties (like `Date` or custom classes) in `@serializable` must have explicit `{ serializer, deserializer }` definitions.
+
+#### 🔵 Recommendations (Cleanliness, Maintainability & a11y)
+- **Component Decomposition**: If a component exceeds ~150 lines, decompose it into `hooks/` (state/logic), `components/` (sub-views), and `utils/` (helpers).
+- **Accessibility (a11y)**: Interactive MUI elements (`IconButton`, `Button`, `TextField`) should include `aria-label` or `aria-labelledby`.
+- **JSDoc Documentation**: Decorate model and props interface properties with `@displayName` and `@description`.
+
+---
+
+### ⚙️ B. Web Service Review (`ServiceBase` Singletons)
+
+#### 🔴 Critical (Breaking Issues & Runtime Failures)
+- **Registration**: Service must be registered in `src/index.ts` via `registry.registerService({ id, getService })`.
+- **Unique Service ID**: Service identifier must not collide with core VertiGIS service IDs.
+
+#### 🟡 Warnings (Architectural & State Deficiencies)
+- **Memory Management**: Timers, polling loops, or event bus subscriptions must be cleared in `_onDestroy()`.
+- **Decoupled Messaging**: Prefer invoking commands and operations via `this.messages.commands` / `this.messages.operations` over hard-coding direct references to other models.
+
+#### 🔵 Recommendations (Cleanliness & Maintainability)
+- **Dependency Injection**: Use `@inject("serviceName")` with strict interface typing when consuming other services.
+- **Helper Extraction**: Move heavy calculation or domain logic into `utils/<domain>Helpers.ts`.
 
 ---
 
 ## 3. HTTPS Certificate Generation (OpenSSL)
 
-VertiGIS Studio Web development requires running the local dev server over HTTPS (typically on port 3000 or 5000).
+VertiGIS Studio Web development requires running the local dev server over HTTPS (port 3000).
 
 ### Option A — Generate Self-Signed Certificate via OpenSSL
 ```bash
@@ -55,7 +80,7 @@ openssl req -x509 -newkey rsa:2048 -keyout certs/key.pem -out certs/cert.pem -da
 ```
 
 ### Option B — Custom Certificate Path
-If the user provides an existing certificate, configure `package.json` or dev server environment:
+Configure `package.json`:
 ```json
 {
   "scripts": {
@@ -68,9 +93,7 @@ If the user provides an existing certificate, configure `package.json` or dev se
 
 ## 4. Helper Scripts Templates
 
-To prevent "Port already in use" errors during development, scaffold these scripts in the project root:
-
-### `start.bat` (Windows Port Killer & Starter)
+### `start.bat` (Windows Port 3000 Killer & Starter)
 ```cmd
 @echo off
 set PORT=3000
@@ -95,7 +118,7 @@ if %ERRORLEVEL% EQU 0 (
 )
 ```
 
-### `start.sh` (Linux / macOS Port Killer & Starter)
+### `start.sh` (Linux / macOS Port 3000 Killer & Starter)
 ```bash
 #!/bin/bash
 PORT=3000

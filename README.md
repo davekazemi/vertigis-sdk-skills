@@ -22,7 +22,7 @@ When an AI assistant is equipped with these skills, it doesn't just guess or out
    [Existing Project Found]          [Empty / New Workspace]
             │                                 │
    • Interactive Menu:               • "Grill-Me" Discovery Interview:
-     1. Review Code vs 9 Rules          1. Target Extension Type
+     1. Review Code (Categorized)       1. Target Extension Type
      2. Add New Component / Service     2. Name & Custom Namespace
      3. Add New Activity / Element      3. HTTPS SSL Certificate Strategy
      4. Generate Tooling Scripts        4. Scaffold Project & Scripts
@@ -30,7 +30,7 @@ When an AI assistant is equipped with these skills, it doesn't just guess or out
 
 ### 1. Existing Workspace Mode
 If the agent detects an existing VertiGIS project, it prompts you before modifying files:
-- **Code Review Audit**: Audits your existing codebase against 9 critical rules (MUI enforcement, no CSS modules, `<LayoutElement>` wrappers, MobX `observer()`, Error Boundaries, `try/catch` error handling, WCAG accessibility, and ArcGIS AMD star imports).
+- **Categorized Code Review Audit**: Audits your codebase with distinct severity levels (🔴 **Critical Errors**, 🟡 **Architectural Warnings**, 🔵 **Cleanliness Recommendations**) tailored to the extension type (Web Components, Services, Workflow Activities, or Form Elements).
 - **Extension Scaffolding**: Scaffolds new Components and Services (Web SDK) or new Activities and Form Elements (Workflow SDK) adhering to canonical directory structures.
 - **Tooling Generation**: Generates automated port-killing start scripts and build scripts.
 
