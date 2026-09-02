@@ -52,22 +52,34 @@ If the workspace is uninitialized, the agent conducts a focused questionnaire to
 
 ## 🚀 How to Install
 
-### Option 1: Using the Vercel `skills` CLI (Recommended)
-If you are using an agentic IDE like Antigravity, Cursor, or Cline, you can use the Open Agent Skills ecosystem (`npx skills`) to install these directly.
+### Option 1: Using the `skills` CLI (Recommended)
+If you are using an agentic IDE like Antigravity, Cursor, Claude Code, or Cline, you can install interactively or in bulk:
 
-To install the **Web SDK Skill**:
+#### 🎯 Interactive Install (prompts to choose specific skills or select all)
 ```bash
-npx skills@latest add davekazemi/vertigis-sdk-skills --skill=vertigis-web-sdk-skill
+npx skills add davekazemi/vertigis-sdk-skills
 ```
 
-To install the **Workflow SDK Skill** (TypeScript):
+#### ⚡ One-Line Install for All Skills
 ```bash
-npx skills@latest add davekazemi/vertigis-sdk-skills --skill=vertigis-workflow-sdk-skill
+npx skills add davekazemi/vertigis-sdk-skills --all
 ```
 
-To install the **Workflow .NET SDK Skill** (C# / .NET):
+#### 🌐 Global Install (User-level across all projects and agents)
 ```bash
-npx skills@latest add davekazemi/vertigis-sdk-skills --skill=vertigis-workflow-dotnet-skill
+npx skills add davekazemi/vertigis-sdk-skills -g --all
+```
+
+#### 📦 Install a Specific Skill
+```bash
+# Web SDK only
+npx skills add davekazemi/vertigis-sdk-skills --skill vertigis-web-sdk-skill
+
+# Workflow SDK (TypeScript) only
+npx skills add davekazemi/vertigis-sdk-skills --skill vertigis-workflow-sdk-skill
+
+# Workflow .NET SDK (C#) only
+npx skills add davekazemi/vertigis-sdk-skills --skill vertigis-workflow-dotnet-skill
 ```
 
 ### Option 2: One-Line Global Install (For Antigravity)
