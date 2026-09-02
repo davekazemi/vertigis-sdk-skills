@@ -21,7 +21,7 @@ Generate flawless, production-ready, enterprise-grade code for VertiGIS Studio W
 ## 3. Rules (CRITICAL AGENT DIRECTIVES)
 You MUST adhere to the following rules without exception:
 
-1. **Mandate Material UI (MUI)**: ALWAYS use `@mui/material` components (e.g., `<Box>`, `<Stack>`, `<Typography>`, `<Button>`). NEVER use native HTML tags (`<div>`, `<span>`, `<button>`, `<input>`) unless absolutely necessary.
+1. **Prefer Material UI (MUI)**: Use `@mui/material` components (`<Box>`, `<Stack>`, `<Typography>`, `<Button>`, `<TextField>`, etc.) whenever an equivalent exists. This guarantees automatic VertiGIS theming, typography consistency, and WCAG accessibility. Plain `<div>` containers are fine for refs/wrappers, but prefer `<Box>`/`<Stack>` for `sx` token styling and avoid unstyled native interactive tags (`<button>`, `<input>`) or raw text tags (`<span>`, `<p>`).
 2. **No Custom CSS / CSS Modules**: NEVER generate `*.css` or `*.module.css` files. Minimize injected CSS. Inherit from parent styles natively via tokens.
 3. **Use the `sx` Prop & Tokens**: When styling is necessary, use MUI's `sx` prop referencing VertiGIS CSS variable tokens (e.g., `sx={{ backgroundColor: 'var(--primaryBackground)' }}`). NEVER invent your own hex colors.
 4. **React Component Decomposition**: NEVER write massive "god components". Break components down into `hooks/` (state/logic), `components/` (stateless MUI presentation), and `utils/` (pure functions/defaults).

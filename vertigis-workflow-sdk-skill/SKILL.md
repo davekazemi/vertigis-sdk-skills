@@ -20,7 +20,7 @@ Generate flawless, production-ready, enterprise-grade code for VertiGIS Studio W
 ## 3. Rules (CRITICAL AGENT DIRECTIVES)
 You MUST adhere to the following rules without exception:
 
-1. **Mandate Material UI (MUI)**: For Form Elements, ALWAYS use `@mui/material` components. NEVER use native HTML tags (`<div>`, `<button>`, `<input>`) unless absolutely necessary.
+1. **Prefer Material UI (MUI)**: For Form Elements, use `@mui/material` components (`<Box>`, `<Stack>`, `<Typography>`, `<Button>`, `<TextField>`, etc.) whenever an equivalent exists. This guarantees automatic VertiGIS theming, typography consistency, and WCAG accessibility. Plain `<div>` containers are fine for layout/refs, but prefer `<Box>`/`<Stack>` for `sx` token styling and avoid unstyled native interactive tags (`<button>`, `<input>`) or raw text tags (`<span>`, `<p>`).
 2. **No Custom CSS / Inline Styles**: Inherit from parent styles natively via VertiGIS tokens. Use MUI's `sx` prop with standard CSS variable tokens (e.g., `sx={{ backgroundColor: 'var(--primaryBackground)' }}`).
 3. **React Component Decomposition**: Break large Form Elements down into `hooks/`, `components/` (stateless MUI), and `utils/`.
 4. **Wire Standard Props**: You MUST destructure and wire `enabled`, `visible`, and `readOnly` to the underlying MUI components (e.g., `disabled={!enabled}`, `inputProps={{ readOnly }}`).

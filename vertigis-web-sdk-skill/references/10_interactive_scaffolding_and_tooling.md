@@ -54,9 +54,11 @@ When performing a code review or when asked to **"Review my code"**, audit the c
 - **Complex `@serializable` Types**: Non-primitive properties (like `Date` or custom classes) in `@serializable` must have explicit `{ serializer, deserializer }` definitions.
 
 #### 🔵 Recommendations (Cleanliness, Maintainability & a11y)
+- **Prefer MUI Component Equivalents**: Where available, use `@mui/material` components (`<Box>`, `<Stack>`, `<Typography>`, `<Button>`, `<TextField>`) instead of bare unstyled HTML tags (`<button>`, `<input>`, `<span>`, `<p>`) to inherit VertiGIS themes and WCAG accessibility automatically. Plain structural `<div>` containers for layout/refs are completely acceptable.
 - **Component Decomposition**: If a component exceeds ~150 lines, decompose it into `hooks/` (state/logic), `components/` (sub-views), and `utils/` (helpers).
 - **Accessibility (a11y)**: Interactive MUI elements (`IconButton`, `Button`, `TextField`) should include `aria-label` or `aria-labelledby`.
 - **JSDoc Documentation**: Decorate model and props interface properties with `@displayName` and `@description`.
+
 
 ---
 

@@ -62,8 +62,7 @@ When performing a code review or when asked to **"Review my code"**, audit the c
 ### 🎨 B. Workflow Form Element Review (`FormElementProps` + `FormElementRegistration`)
 
 #### 🔴 Critical (Breaking Issues & Runtime Failures)
-- **MUI Component Mandate**: Views MUST use `@mui/material` components (`<Box>`, `<TextField>`, `<Button>`). Bare HTML input tags (`<input>`, `<button>`, `<div>`) break styling and theme consistency.
-- **Wiring Standard Props**: MUST destructure and wire `enabled`, `visible`, and `readOnly` to MUI properties (`disabled={!enabled}`, `inputProps={{ readOnly }}`).
+- **Wiring Standard Props**: MUST destructure and wire `enabled`, `visible`, and `readOnly` to underlying components (`disabled={!enabled}`, `inputProps={{ readOnly }}`).
 - **Registration ID Match**: `FormElementRegistration.id` MUST match the Custom Type name in Workflow Designer.
 - **ArcGIS AMD Star Imports**: Any ArcGIS utility/function modules used in the element MUST use star imports (`import * as projection from "@arcgis/core/geometry/projection"`). Default imports trigger `Unsupported AMD module` loader failures.
 - **Barrel Export**: Form element must be exported from `src/index.ts` with a name ending in `Registration`.
@@ -74,9 +73,11 @@ When performing a code review or when asked to **"Review my code"**, audit the c
 - **Multiple Output Handling**: When producing secondary outputs, use `props.setProperty("propName", value)` so they are accessible via *Get Form Element Property*.
 
 #### 🔵 Recommendations (Accessibility, Cleanliness & Decomposition)
+- **Prefer MUI Component Equivalents**: Where available, use `@mui/material` components (`<Box>`, `<Stack>`, `<Typography>`, `<Button>`, `<TextField>`) instead of bare unstyled HTML tags (`<button>`, `<input>`, `<span>`, `<p>`) to inherit VertiGIS themes and WCAG accessibility automatically. Plain structural `<div>` containers for layout/refs are completely acceptable.
 - **React Component Decomposition**: When a form element exceeds ~150 lines or manages multi-step state, decompose it into `hooks/` (custom React hooks for state/effects), `components/` (stateless presentation sub-components), and `utils/` (types & helper functions).
 - **WCAG Accessibility (a11y)**: Add `aria-label`, `aria-pressed`, and keyboard event handlers (`onKeyDown` for Space/Enter keys) on interactive components.
 - **Structured Custom Events**: Dispatch custom events using structured payloads: `props.raiseEvent("custom", { customEventType: "eventName", data: ... })`.
+
 
 ---
 
