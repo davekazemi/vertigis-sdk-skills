@@ -73,8 +73,8 @@ lastInspectedDate?: Date;
 ## 2. Creating the React View (MUI + LayoutElement Required)
 
 Views MUST:
-- Use MUI components (`@mui/material`) — **NEVER use standard HTML tags**
-- Use VertiGIS CSS variable tokens — **NEVER hardcode hex colors**
+- Use MUI components (`@mui/material`) — **NEVER use standard HTML text tags (`<span>`, `<p>`, `<h1>`-`<h6>`)**
+- Use VertiGIS CSS variable tokens — **NEVER hardcode hex/RGB colors**
 - Extend `LayoutElementProperties<TModel>` in props to expose parameters to the Designer
 - Wrap all content inside `<LayoutElement {...props}>` — this is **REQUIRED** by the SDK
 - Wrap the component function with `observer()` from MobX to enable reactive re-rendering when model observables change
@@ -108,7 +108,7 @@ const MyWidget = observer(function MyWidget(props: MyWidgetProps): React.ReactEl
     const { model, customConfigParam = "Default" } = props;
 
     // Direct access to UI Context commands & services in React views
-    const { commands, operations } = useUIContext();
+    const { commands } = useUIContext();
     const i18n = useService<I18nService>("i18n");
 
     const handleAction = async () => {
@@ -128,33 +128,80 @@ const MyWidget = observer(function MyWidget(props: MyWidgetProps): React.ReactEl
                         p: 2,
                         backgroundColor: "var(--primaryBackground)",
                         borderRadius: "var(--borderRadius, 4px)",
+                        border: "1px solid var(--primaryBorder)",
                     }}
                 >
-                    <Typography variant="h6" sx={{ color: "var(--primaryAccent)", mb: 1 }}>
+                    {/* Widget Title with MUI Typography */}
+                    <Typography
+                        variant="h6"
+                        sx={{
+                            color: "var(--primaryForeground)",
+                            fontFamily: "var(--defaultFont)",
+                            mb: 0.5,
+                        }}
+                    >
                         {model.greetingText}
                     </Typography>
 
-                    <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
-                        <Typography variant="body1" sx={{ color: "var(--primaryForeground)" }}>
-                            Current Count: {model.count}
+                    {/* Section Subtitle */}
+                    <Typography
+                        variant="subtitle2"
+                        sx={{ color: "var(--secondaryForeground)", mb: 1.5 }}
+                    >
+                        Interactive Counter & Diagnostics
+                    </Typography>
+
+                    {/* Nested Container Surface */}
+                    <Box
+                        sx={{
+                            p: 1.5,
+                            mb: 2,
+                            backgroundColor: "var(--secondaryBackground)",
+                            border: "1px solid var(--primaryBorder)",
+                            borderRadius: "var(--borderRadius, 4px)",
+                        }}
+                    >
+                        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                            <Typography variant="body1" sx={{ color: "var(--primaryForeground)" }}>
+                                Current Count: <strong>{model.count}</strong>
+                            </Typography>
+                            <Typography
+                                variant="overline"
+                                sx={{
+                                    px: 1,
+                                    py: 0.25,
+                                    borderRadius: "4px",
+                                    backgroundColor: "var(--alertGreenBackground)",
+                                    color: "var(--alertGreenForeground)",
+                                    fontWeight: "bold",
+                                }}
+                            >
+                                ACTIVE
+                            </Typography>
+                        </Stack>
+
+                        <Typography variant="body2" sx={{ color: "var(--secondaryForeground)", mb: 1.5 }}>
+                            Configuration parameter: {customConfigParam}
                         </Typography>
+
                         <Button
                             variant="contained"
                             onClick={handleAction}
                             sx={{
-                                backgroundColor: "var(--primaryAccent)",
+                                backgroundColor: "var(--emphasizedButtonBackground, var(--primaryAccent))",
                                 color: "var(--buttonForeground)",
                                 "&:hover": {
                                     backgroundColor: "var(--primaryAccentHover)",
                                 },
                             }}
                         >
-                            Increment
+                            Increment Count
                         </Button>
-                    </Stack>
+                    </Box>
 
+                    {/* Microcopy / Caption Metadata */}
                     {model.map && (
-                        <Typography variant="caption" sx={{ color: "var(--secondaryForeground)" }}>
+                        <Typography variant="caption" sx={{ color: "var(--secondaryForeground)", display: "block" }}>
                             Attached Map ID: {model.map.id}
                         </Typography>
                     )}
@@ -217,22 +264,65 @@ export default function (registry: LibraryRegistry): void {
 
 ## 4. Styling and Theming Rules
 
-- **Use the `sx` prop**: Apply styles inline using MUI's `sx` prop.
-- **Use CSS Variables (Tokens)**: NEVER invent hex colors. Always map styles to standard tokens:
-  - `var(--primaryBackground)`
-  - `var(--secondaryBackground)`
-  - `var(--primaryForeground)`
-  - `var(--secondaryForeground)`
-  - `var(--primaryAccent)`
-  - `var(--primaryAccentHover)`
-  - `var(--primaryBorder)`
-  - `var(--buttonForeground)`
-  - `var(--emphasizedButtonBackground)`
-  - `var(--itemHoverBackground)`
-  - `var(--itemSelectedBackground)`
-  - `var(--alertRedBackground)`
-  - `var(--defaultFont)`
-- **No CSS Modules**: Do NOT create `.css` or `.module.css` files. Inherit from parent application styles natively via tokens.
+VertiGIS Studio Web enforces a strict, tokenized design architecture. Custom components must never hardcode styling values or bundle isolated CSS style sheets; they must participate directly in the host application's design system across light and dark modes.
+
+### 4.1 Typography System
+
+All textual content in VertiGIS Web components must be rendered through `@mui/material` `<Typography>` components. **Raw HTML text tags (`<span>`, `<p>`, `<h1>`-`<h6>`, `<strong>`, `<em>`) are strictly prohibited.**
+
+#### MUI Typography Variant Reference
+| Variant | Semantic Purpose | Typical Usage | Standard Foreground Token |
+| :--- | :--- | :--- | :--- |
+| `h5`, `h6` | Top-level container & widget headers | Widget titles, modal headlines, primary card headers | `var(--primaryForeground)` / `var(--primaryAccent)` |
+| `subtitle1`, `subtitle2` | Section & group headings | Panel section titles, group headers, card subheadings | `var(--secondaryForeground)` |
+| `body1` | Primary body text | Main descriptions, form labels, list item text | `var(--primaryForeground)` |
+| `body2` | Secondary body text | Explanatory notes, auxiliary content, secondary descriptions | `var(--secondaryForeground)` |
+| `caption` | Microcopy & metadata | Timestamps, coordinate values, data source attributions | `var(--secondaryForeground)` |
+| `overline` | Status badges & category tags | Uppercase category labels, status badges, chip text | `var(--primaryForeground)` / Alert foregrounds |
+
+#### Typography Rules & Best Practices
+1. **Zero Raw HTML Text Elements**: Always replace `<p>` with `<Typography variant="body1">` or `<Typography variant="body2">`, `<span>` with `<Typography variant="caption">` or appropriate variant, and `<h1>`-`<h6>` with `<Typography variant="h5">` or `<Typography variant="h6">`.
+2. **Font Family Token**: Always inherit typography via `var(--defaultFont)` (configured automatically across MUI components in the host shell).
+3. **Semantic Text Color Tokens**: Pair every Typography variant with semantic foreground tokens via `sx`:
+   - High-contrast text: `sx={{ color: "var(--primaryForeground)" }}`
+   - Secondary / muted text: `sx={{ color: "var(--secondaryForeground)" }}`
+   - Inactive / disabled text: `sx={{ color: "var(--disabledForeground)" }}`
+4. **Layout Wrappers**: Use `<Box>` and `<Stack>` to arrange typography elements instead of unstructured text containers.
+
+---
+
+### 4.2 Color & Design Tokens System
+
+VertiGIS Studio Web utilizes CSS custom properties (variables) dynamically injected by the host shell. These tokens automatically adapt when users switch between light and dark themes, or when custom organization branding is applied in the VertiGIS Studio Web Designer.
+
+#### Complete Token Reference Catalogue
+| Token Category | CSS Variable | Semantic Usage |
+| :--- | :--- | :--- |
+| **Surfaces & Backgrounds** | `var(--primaryBackground)` | Main surface for panels, drawers, widgets, and dialogs. |
+| | `var(--secondaryBackground)` | Nested cards, group containers, zebra striping, and inset areas. |
+| **Borders & Dividers** | `var(--primaryBorder)` | Structural container borders, dividers, and card outlines. |
+| **Foregrounds & Text** | `var(--primaryForeground)` | High-contrast text, primary icon fills, and active labels. |
+| | `var(--secondaryForeground)` | Secondary text, subheadings, captions, and muted icons. |
+| | `var(--disabledForeground)` | Inactive text, disabled actions, and placeholder copy. |
+| **Accents & Highlights** | `var(--primaryAccent)` | Primary brand highlight, active tab indicators, selected item accents. |
+| | `var(--primaryAccentHover)` | Hover state for accent buttons, links, and actionable highlights. |
+| **Controls & Buttons** | `var(--emphasizedButtonBackground)` | Primary CTA button background fill. |
+| | `var(--buttonForeground)` | High-contrast text and icon color within buttons. |
+| | `var(--itemHoverBackground)` | Hover background for list items, menu items, and clickable rows. |
+| | `var(--itemSelectedBackground)` | Active or selected background for list items and tree nodes. |
+| **Alerts & Status Feedback** | `var(--alertRedBackground)` / `var(--alertRedForeground)` | Critical errors, destructive actions, failure notifications. |
+| | `var(--alertGreenBackground)` / `var(--alertGreenForeground)` | Success confirmations, online indicators, valid states. |
+| | `var(--alertAmberBackground)` / `var(--alertAmberForeground)` | Warnings, caveats, pending/in-progress indicators. |
+| | `var(--alertGrayBackground)` / `var(--alertGrayForeground)` | Informational badges, neutral notifications, muted tags. |
+| **Typography & Radius** | `var(--defaultFont)` | System font stack inherited across all typography elements. |
+| | `var(--borderRadius)` | Standard corner radius for cards, buttons, and panels (default: 4px). |
+
+#### GIS Color Selection Principles
+- **Map-First Visual Hierarchy**: Keep UI chrome and panels subdued (`--primaryBackground` and `--secondaryBackground` with neutral `--primaryBorder`) so that spatial map layers, vector symbology, and GIS overlays remain the dominant visual focus.
+- **Strict Zero Hardcoded Colors Rule**: NEVER use hex (`#ffffff`, `#1976d2`), RGB (`rgb(...)`), or HSL colors in components. Hardcoded colors break in dark mode, clash with custom customer branding themes, and violate enterprise theme requirements.
+- **Automatic Light & Dark Theme Adaptation**: Because all tokens are dynamically defined on the root application shell, components built with CSS variable tokens transition seamlessly between light and dark themes without custom media queries (`@media (prefers-color-scheme)`) or state checks.
+- **WCAG AA Contrast Compliance**: Always maintain at least a 4.5:1 contrast ratio for normal text and 3:1 for large text or graphical boundaries. Combining `--primaryForeground` with `--primaryBackground` guarantees compliance in all official VertiGIS themes.
+- **No CSS Modules or External CSS**: Do NOT create `.css` or `.module.css` files. Apply token styles exclusively through MUI's `sx` prop or styled components referencing these variables.
 
 ---
 

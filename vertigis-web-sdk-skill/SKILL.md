@@ -8,6 +8,9 @@ triggers:
   - "Build a VertiGIS Web component"
   - "Create a VertiGIS service"
   - "VertiGIS Studio Web configuration"
+  - "initiate"
+  - "Setup VertiGIS AGENTS.md"
+  - "Initialize VertiGIS project rules"
 ---
 
 # VertiGIS Studio Web SDK Skill
@@ -21,9 +24,9 @@ Generate flawless, production-ready, enterprise-grade code for VertiGIS Studio W
 ## 3. Rules (CRITICAL AGENT DIRECTIVES)
 You MUST adhere to the following rules without exception:
 
-1. **Prefer Material UI (MUI)**: Use `@mui/material` components (`<Box>`, `<Stack>`, `<Typography>`, `<Button>`, `<TextField>`, etc.) whenever an equivalent exists. This guarantees automatic VertiGIS theming, typography consistency, and WCAG accessibility. Plain `<div>` containers are fine for refs/wrappers, but prefer `<Box>`/`<Stack>` for `sx` token styling and avoid unstyled native interactive tags (`<button>`, `<input>`) or raw text tags (`<span>`, `<p>`).
-2. **No Custom CSS / CSS Modules**: NEVER generate `*.css` or `*.module.css` files. Minimize injected CSS. Inherit from parent styles natively via tokens.
-3. **Use the `sx` Prop & Tokens**: When styling is necessary, use MUI's `sx` prop referencing VertiGIS CSS variable tokens (e.g., `sx={{ backgroundColor: 'var(--primaryBackground)' }}`). NEVER invent your own hex colors.
+1. **Typography System**: Strict ban on raw HTML text elements (`<span>`, `<p>`, `<h1>`-`<h6>`, `<strong>`, `<em>`). All text MUST use `@mui/material` `<Typography variant="...">` (`h5`, `h6` for widget titles; `subtitle1`, `subtitle2` for section headers; `body1`, `body2` for primary/secondary content; `caption`, `overline` for microcopy/status badges). Always pair with semantic text color tokens (`var(--primaryForeground)`, `var(--secondaryForeground)`, `var(--disabledForeground)`) and font token `var(--defaultFont)`.
+2. **Color & Design Tokens System**: Strict ban on hardcoded hex (`#ffffff`, `#1976d2`), RGB (`rgb(...)`), or HSL colors for UI chrome, backgrounds, text, and borders. Always map styling via MUI's `sx` prop to official VertiGIS CSS variable tokens (`var(--primaryBackground)`, `var(--secondaryBackground)`, `var(--primaryBorder)`, `var(--primaryAccent)`, `var(--primaryAccentHover)`, `var(--emphasizedButtonBackground)`, `var(--buttonForeground)`, `var(--itemHoverBackground)`, `var(--itemSelectedBackground)`, and alert tokens). Keep UI chrome neutral so the GIS map remains the primary focus. Ensure WCAG AA contrast (4.5:1 for normal text, 3:1 for large text) across light and dark themes.
+3. **No Custom CSS / CSS Modules**: NEVER generate `*.css` or `*.module.css` files. Minimize injected CSS. Inherit from parent styles natively via tokens.
 4. **React Component Decomposition**: NEVER write massive "god components". Break components down into `hooks/` (state/logic), `components/` (stateless MUI presentation), and `utils/` (pure functions/defaults).
 5. **Exposing Properties to Designer**: To expose configuration parameters to the VertiGIS Web Designer, the React component's props interface MUST extend `LayoutElementProperties<TModel>`.
 6. **LayoutElement Wrapper**: Every component view MUST wrap its content inside `<LayoutElement {...props}>` (imported from `@vertigis/web/components`).
@@ -37,11 +40,13 @@ You MUST adhere to the following rules without exception:
 - If multiple files are needed (e.g. Model, View, index.ts), separate them logically.
 
 ## 5. Interactive Consultation Protocol (Grill-Me Mode)
-When the user triggers this skill:
-1. **Detect Project**: Scan the workspace to check if an existing VertiGIS project exists (`package.json`, `@vertigis/*`, `app/app.json`).
-2. **If Existing Project Found**: Ask whether the user wants to **[Review Code]** (categorized by Critical Errors, Architectural Warnings, and Cleanliness Recommendations), **[Add New Component]**, **[Add New Service]**, or **[Generate Scripts]**.
-3. **If New / Uninitialized Workspace**: Conduct an interactive interview:
+When the user triggers this skill or enters `initiate`:
+1. **`initiate` Command**: When the user types `initiate` or asks to initialize/configure AGENTS.md, run or offer `python3 vertigis-web-sdk-skill/scripts/initiate_agents_md.py [--target-dir <path>]` to inject or update official VertiGIS Studio Web SDK directives enclosed in `<!-- vertigis-web-sdk:start -->` and `<!-- vertigis-web-sdk:end -->` without touching existing instructions.
+2. **Detect Project**: Scan the workspace to check if an existing VertiGIS project exists (`package.json`, `@vertigis/*`, `app/app.json`).
+3. **If Existing Project Found**: Ask whether the user wants to **[Configure AGENTS.md Directives (`initiate`)]**, **[Review Code]** (categorized by Critical Errors, Architectural Warnings, and Cleanliness Recommendations), **[Add New Component]**, **[Add New Service]**, or **[Generate Scripts]**.
+4. **If New / Uninitialized Workspace**: Conduct an interactive interview:
    - Ask for extension type (Component vs Service) and custom namespace.
+   - Configure `AGENTS.md` directives via `initiate_agents_md.py`.
    - Ask for HTTPS Certificate strategy (generate with OpenSSL vs custom paths).
    - Generate `start.bat` / `start.sh` (which kills stale port 3000 processes and runs `npm start`) and `build.bat` / `build.sh`.
 
@@ -51,7 +56,7 @@ When the user triggers this skill:
 
 | Topic | Reference Guide | Key Focus Areas |
 | :--- | :--- | :--- |
-| **Interactive Tooling** | [Scaffolding & Scripts](./references/10_interactive_scaffolding_and_tooling.md) | Discovery flow, code audit checklist, OpenSSL SSL certificates, `start.bat`, `build.bat`. |
+| **Interactive Tooling** | [Scaffolding & Scripts](./references/10_interactive_scaffolding_and_tooling.md) | Discovery flow, `initiate` command (`AGENTS.md` injection), code audit checklist, SSL certificates, `start.bat`, `build.bat`. |
 | **Architecture & CLI** | [Overview & Concepts](./references/01_overview_and_concepts.md) | System model, CLI scaffolding, project structure, `src/index.ts`. |
 | **Custom Components** | [Components Guide](./references/02_components.md) | Component models (`*Model.ts`), React views (`*.tsx`), `LayoutElement`, `observer()`, MUI usage. |
 | **Custom Services** | [Services Guide](./references/03_services.md) | Singletons, `ServiceBase`, state management, background timers, service injection. |
@@ -149,13 +154,54 @@ const CustomWidget = observer(function CustomWidget(props: CustomWidgetProps) {
     const { model } = props;
     return (
         <LayoutElement {...props}>
-            <Box sx={{ p: 2, backgroundColor: "var(--primaryBackground)" }}>
-                <Typography variant="h6" sx={{ color: "var(--primaryForeground)" }}>
+            <Box
+                sx={{
+                    p: 2,
+                    backgroundColor: "var(--primaryBackground)",
+                    border: "1px solid var(--primaryBorder)",
+                    borderRadius: "var(--borderRadius, 4px)",
+                }}
+            >
+                {/* Header with Typography System */}
+                <Typography
+                    variant="h6"
+                    sx={{
+                        color: "var(--primaryForeground)",
+                        fontFamily: "var(--defaultFont)",
+                        mb: 0.5,
+                    }}
+                >
                     {model.title}
                 </Typography>
-                {model.map && (
+
+                <Typography
+                    variant="subtitle2"
+                    sx={{ color: "var(--secondaryForeground)", mb: 1.5 }}
+                >
+                    Component Overview & State
+                </Typography>
+
+                {/* Nested Surface with Design Tokens */}
+                <Box
+                    sx={{
+                        p: 1.5,
+                        backgroundColor: "var(--secondaryBackground)",
+                        border: "1px solid var(--primaryBorder)",
+                        borderRadius: "var(--borderRadius, 4px)",
+                        mb: 1.5,
+                    }}
+                >
+                    <Typography variant="body1" sx={{ color: "var(--primaryForeground)", mb: 0.5 }}>
+                        Primary content description.
+                    </Typography>
                     <Typography variant="body2" sx={{ color: "var(--secondaryForeground)" }}>
-                        Bound to Map ID: {model.map.id}
+                        Secondary helper details and configuration info.
+                    </Typography>
+                </Box>
+
+                {model.map && (
+                    <Typography variant="caption" sx={{ color: "var(--secondaryForeground)", display: "block" }}>
+                        Attached Map ID: {model.map.id}
                     </Typography>
                 )}
             </Box>
@@ -168,6 +214,8 @@ export default CustomWidget;
 
 ---
 
-## 3. Crawl & Maintenance Tooling
+## 3. Tooling & Automation Scripts
 
-This skill includes an automated Crawl4AI script in `scripts/crawl_vertigis_docs.py` to refresh the crawled documentation directly from the VertiGIS Developer Center.
+This skill includes automated Python utilities in `scripts/`:
+- `scripts/initiate_agents_md.py`: Automatically creates or updates the target repository's `AGENTS.md` with official VertiGIS Studio Web SDK directives enclosed between `<!-- vertigis-web-sdk:start -->` and `<!-- vertigis-web-sdk:end -->`.
+- `scripts/crawl_vertigis_docs.py`: Crawl4AI script to refresh crawled documentation directly from the VertiGIS Developer Center.

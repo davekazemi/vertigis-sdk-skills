@@ -1,7 +1,6 @@
 # Ignore raw scraped data and python scraping scripts
 **/references/raw/
-**/scripts/
-**/*.py
+**/scripts/crawl_*.py
 **/*.pyc
 __pycache__/
 .env

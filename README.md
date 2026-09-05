@@ -13,7 +13,7 @@ When an AI assistant is equipped with these skills, it doesn't just guess or out
 
 ```mermaid
 flowchart TD
-    A[Skill Triggered] --> B[Scan Workspace for Project Files]
+    A[Skill Triggered / 'initiate' command] --> B[Scan Workspace for Project Files]
 
     B --> C{Workspace State}
 
@@ -22,22 +22,24 @@ flowchart TD
 
     subgraph D [Existing Workspace]
         D1[Review Code]
-        D2[Add Component / Service]
-        D3[Add Activity / Element]
-        D4[Generate Tooling Scripts]
+        D2[Configure AGENTS.md ('initiate')]
+        D3[Add Component / Service]
+        D4[Add Activity / Element]
+        D5[Generate Tooling Scripts]
     end
 
     subgraph E [Grill-Me Discovery]
         E1[Target Extension Type]
         E2[Name & Custom Namespace]
         E3[HTTPS SSL Strategy]
-        E4[Scaffold Project & Scripts]
+        E4[Scaffold Project, AGENTS.md & Scripts]
     end
 ```
 
 ### 1. Existing Workspace Mode
 If the agent detects an existing VertiGIS project, it prompts you before modifying files:
-- **Categorized Code Review Audit**: Audits your codebase with distinct severity levels (🔴 **Critical Errors**, 🟡 **Architectural Warnings**, 🔵 **Cleanliness Recommendations**) tailored to the extension type (Web Components, Services, Workflow Activities, or Form Elements).
+- **Configure AGENTS.md Directives (`initiate`)**: Run `python3 vertigis-web-sdk-skill/scripts/initiate_agents_md.py` to automatically configure or update `AGENTS.md` in the target repository with scoped directives (`<!-- vertigis-web-sdk:start --> ... <!-- vertigis-web-sdk:end -->`) without overwriting other custom instructions.
+- **Categorized Code Review Audit**: Audits your codebase with distinct severity levels (🔴 **Critical Errors**, 🟡 **Architectural Warnings**, 🔵 **Cleanliness Recommendations**) tailored to the extension type (Web Components, Services, Workflow Activities, or Form Elements), including strict checks for Typography and Design Token compliance.
 - **Extension Scaffolding**: Scaffolds new Components and Services (Web SDK) or new Activities and Form Elements (Workflow SDK) adhering to canonical directory structures.
 - **Tooling Generation**: Generates automated port-killing start scripts and build scripts.
 
@@ -107,14 +109,16 @@ If you are using a standard web chat interface:
 ### 1. VertiGIS Web SDK Skill (`vertigis-web-sdk-skill/`)
 Teaches the AI how to build custom components, services, and commands for VertiGIS Studio Web.
 **Key Enforcements:**
-- Material UI (MUI) and CSS Variable Tokens (no custom CSS)
-- React Component Decomposition (Hooks, View, Utils)
-- MobX `observer()` wrappers for reactive state
-- `<LayoutElement>` wrappers for Designer integration
-- React Error Boundaries for enterprise reliability
-- Custom SVG Icon registration (`createSvgIcon`, `registerIcon`)
-- Comprehensive Command and Operation invocation (`useUIContext`, `useService`, `$ref`, `$eval`)
-- ArcGIS AMD module loader rules (Star Imports for utilities vs Default Imports for classes)
+- **Typography System**: Strict ban on raw HTML text elements (`<span>`, `<p>`, `<h1>`-`<h6>`). Enforces `@mui/material` `<Typography variant="...">` with semantic variants (`h5`/`h6` titles, `subtitle1`/`subtitle2` headers, `body1`/`body2` body text, `caption`/`overline` microcopy), `var(--defaultFont)`, and semantic foreground tokens.
+- **Color & Design Tokens System**: Strict ban on hardcoded hex/RGB/HSL colors. Complete CSS token system for surfaces (`var(--primaryBackground)`, `var(--secondaryBackground)`), borders (`var(--primaryBorder)`), foregrounds, accents, button controls, and status alerts. Enforces map-first neutral UI chrome and dark/light theme adaptability.
+- **Automated `initiate` Tooling**: Command and script (`scripts/initiate_agents_md.py`) to inject or update scoped `AGENTS.md` directives (`<!-- vertigis-web-sdk:start --> ... <!-- vertigis-web-sdk:end -->`) in target repositories without clobbering existing rules.
+- **React Component Decomposition**: Clean separation into `hooks/`, `components/`, and `utils/` (no god components).
+- **MobX `observer()`**: Reactive re-rendering on model observables.
+- **`<LayoutElement>` Wrappers**: Layout slotting and Designer parameter integration.
+- **React Error Boundaries**: Component fault isolation for host application stability.
+- **Custom SVG Icon Registration**: `createSvgIcon` and `registerIcon` workflows.
+- **Commands & Operations**: UI context execution, service injection, and configuration bindings (`$ref`, `$eval`).
+- **ArcGIS AMD Module Loader Rules**: Star imports for utilities vs default imports for classes.
 
 ### 2. VertiGIS Workflow SDK Skill (`vertigis-workflow-sdk-skill/`)
 Teaches the AI how to build custom activities and form elements for VertiGIS Studio Workflow in TypeScript.

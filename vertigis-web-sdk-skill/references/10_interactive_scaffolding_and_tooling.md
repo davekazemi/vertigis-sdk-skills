@@ -9,7 +9,7 @@ When interacting with a developer, the agent follows an interactive consultation
 
 ```mermaid
 flowchart TD
-    A[Skill Triggered] --> B[Scan Workspace for Project Files]
+    A[Skill Triggered / 'initiate' command] --> B[Scan Workspace for Project Files]
 
     B --> C{Workspace State}
 
@@ -18,8 +18,8 @@ flowchart TD
 
     subgraph D [Existing Workspace]
         D1[Review Code Categorized]
-        D2[Add New Component]
-        D3[Add New Service]
+        D2[Configure AGENTS.md Directives ('initiate')]
+        D3[Add New Component / Service]
         D4[Generate Tooling Scripts]
     end
 
@@ -27,7 +27,7 @@ flowchart TD
         E1[Target Component vs Service]
         E2[Name & Custom Namespace]
         E3[HTTPS SSL Strategy]
-        E4[Scaffold Project & Scripts]
+        E4[Scaffold Project, AGENTS.md & Scripts]
     end
 ```
 
@@ -43,18 +43,21 @@ When performing a code review or when asked to **"Review my code"**, audit the c
 - **`<LayoutElement>` Wrapper**: React view MUST wrap all JSX inside `<LayoutElement {...props}>`. Omitting this breaks SDK layout slotting, sizing, and Designer drag-and-drop.
 - **MobX `observer()`**: React view MUST be wrapped with `observer()` from `mobx-react-lite` if reading model properties. Without it, model observable changes will not trigger re-renders.
 - **Designer Integration**: Props interface MUST extend `LayoutElementProperties<TModel>` so parameters are exposed to Web Designer.
+- **Typography System Violations (Ban on Raw HTML Text)**: NEVER use raw HTML text tags (`<span>`, `<p>`, `<h1>`-`<h6>`, `<strong>`, `<em>`). All text MUST use `@mui/material` `<Typography variant="...">` paired with semantic foreground tokens (`var(--primaryForeground)`, `var(--secondaryForeground)`). Raw text tags fail theme adaptation and break typography consistency.
+- **Color Token Violations (Ban on Hardcoded Colors)**: NEVER use hardcoded hex (`#ffffff`, `#1976d2`), RGB (`rgb(...)`), or HSL colors for UI chrome, backgrounds, text, and borders. All styling must map to VertiGIS CSS variable tokens (`var(--primaryBackground)`, `var(--secondaryBackground)`, `var(--primaryBorder)`, `var(--primaryAccent)`, etc.). Hardcoded colors break in dark mode and fail WCAG contrast requirements.
 - **ArcGIS AMD Star Imports**: Utility/function modules (`projection`, `geometryEngine`) must use star imports (`import * as projection from "@arcgis/core/geometry/projection"`). Default imports cause `Unsupported AMD module` errors.
 - **Host Peer Dependencies**: NEVER bundle duplicate copies of `@vertigis/web`, `@arcgis/core`, `react`, or `@mui/material`.
 
 #### 🟡 Warnings (Architectural & State Deficiencies)
 - **Missing Error Boundary**: Custom widget contents should be wrapped in an `<ErrorBoundary>` to prevent a single component crash from breaking the entire application layout.
-- **Color Token Violations**: Avoid hardcoded hex/RGB colors. Map all styling to VertiGIS CSS variable tokens (`var(--primaryBackground)`, `var(--primaryForeground)`).
 - **CSS Modules / Custom CSS**: Avoid creating `.css` or `.module.css` files. Use MUI's `sx` prop referencing CSS tokens.
+- **Token Role Mismatch**: Ensure proper tokens are used according to role (e.g. `var(--secondaryForeground)` for subtitles/captions, `var(--primaryAccentHover)` on hover states, `var(--primaryBorder)` on card outlines).
 - **Resource Leaks in Lifecycle**: Any event subscriptions, background intervals, or MobX reactions created in `_onInitialize()` MUST be disposed in `_onDestroy()`.
 - **Complex `@serializable` Types**: Non-primitive properties (like `Date` or custom classes) in `@serializable` must have explicit `{ serializer, deserializer }` definitions.
 
 #### 🔵 Recommendations (Cleanliness, Maintainability & a11y)
-- **Prefer MUI Component Equivalents**: Where available, use `@mui/material` components (`<Box>`, `<Stack>`, `<Typography>`, `<Button>`, `<TextField>`) instead of bare unstyled HTML tags (`<button>`, `<input>`, `<span>`, `<p>`) to inherit VertiGIS themes and WCAG accessibility automatically. Plain structural `<div>` containers for layout/refs are completely acceptable.
+- **Prefer MUI Component Equivalents**: Where available, use `@mui/material` components (`<Box>`, `<Stack>`, `<Typography>`, `<Button>`, `<TextField>`) instead of bare unstyled HTML tags (`<button>`, `<input>`) to inherit VertiGIS themes and WCAG accessibility automatically. Plain structural `<div>` containers for layout/refs are acceptable.
+- **Typography Hierarchy**: Adhere strictly to the Typography variant hierarchy (`h5`/`h6` for widget titles, `subtitle1`/`subtitle2` for section headers, `body1`/`body2` for content, `caption`/`overline` for microcopy/badges).
 - **Component Decomposition**: If a component exceeds ~150 lines, decompose it into `hooks/` (state/logic), `components/` (sub-views), and `utils/` (helpers).
 - **Accessibility (a11y)**: Interactive MUI elements (`IconButton`, `Button`, `TextField`) should include `aria-label` or `aria-labelledby`.
 - **JSDoc Documentation**: Decorate model and props interface properties with `@displayName` and `@description`.
@@ -146,4 +149,77 @@ npm start
 #!/bin/bash
 echo "Building production VertiGIS Web SDK library bundle..."
 npm run build
+```
+
+---
+
+### `initiate_agents_md.py` (Automated `AGENTS.md` Directives Injection)
+
+The `initiate` command configures or updates the target repository's `AGENTS.md` with official VertiGIS Studio Web SDK directives. It wraps directives inside scoped comment markers (`<!-- vertigis-web-sdk:start -->` and `<!-- vertigis-web-sdk:end -->`), preserving any existing rules or instructions in the target file.
+
+#### Usage
+```bash
+# Run in current repository directory
+python3 vertigis-web-sdk-skill/scripts/initiate_agents_md.py
+
+# Specify custom target directory
+python3 vertigis-web-sdk-skill/scripts/initiate_agents_md.py --target-dir /path/to/my-web-extension
+
+# Force update an existing VertiGIS directives block
+python3 vertigis-web-sdk-skill/scripts/initiate_agents_md.py --target-dir /path/to/my-web-extension --force
+```
+
+#### Injected Directive Template
+```markdown
+<!-- vertigis-web-sdk:start -->
+# VertiGIS Studio Web SDK Development Directives
+
+> **Mandatory Agent Directive**: Whenever you make any change to or create any web component in this repository, ALWAYS check and verify it against VertiGIS Web SDK standards (LayoutElement wrapper, MobX observer, MUI components with sx tokens, zero hardcoded colors, ErrorBoundary wrapper).
+
+## 1. Typography System
+- **Strict ban on raw HTML text elements**: Never use raw `<span>`, `<p>`, or `<h1>`-`<h6>` tags.
+- **MUI Typography Component**: Always use `@mui/material` `<Typography variant="...">`:
+  - `h5`, `h6`: Widget titles and primary container headers.
+  - `subtitle1`, `subtitle2`: Section headers, grouping titles, and card subheadings.
+  - `body1`, `body2`: Primary and secondary descriptive body text.
+  - `caption`, `overline`: Microcopy, timestamps, metadata labels, and status badges.
+- **Semantic Text Color Tokens**: Always pair Typography variants with semantic foreground tokens via `sx`:
+  - Primary text: `color: "var(--primaryForeground)"`
+  - Secondary/muted text: `color: "var(--secondaryForeground)"`
+  - Inactive/disabled text: `color: "var(--disabledForeground)"`
+- **Font Family**: Use `fontFamily: "var(--defaultFont)"` (inherited automatically through MUI components).
+
+## 2. Color & Design Tokens System
+- **Zero Hardcoded Colors**: Strict ban on hardcoded hex (`#ffffff`), RGB (`rgb(...)`), or HSL color values for UI chrome, backgrounds, text, and borders.
+- **Token Reference Catalogue**:
+  - **Surfaces & Backgrounds**:
+    - `var(--primaryBackground)`: Main widget, panel, and dialog surface.
+    - `var(--secondaryBackground)`: Nested card, container, or contrasting surface.
+  - **Borders & Dividers**:
+    - `var(--primaryBorder)`: Subtle division lines, container outlines, and card borders.
+  - **Foregrounds & Text**:
+    - `var(--primaryForeground)`: High-contrast primary text, icons, and active symbols.
+    - `var(--secondaryForeground)`: Muted secondary text, labels, and captions.
+    - `var(--disabledForeground)`: Inactive or disabled text and control icons.
+  - **Accents & Highlights**:
+    - `var(--primaryAccent)`: Brand highlight, active tabs, selected states, and focus rings.
+    - `var(--primaryAccentHover)`: Hover state for primary accent elements.
+  - **Controls & Interactive Elements**:
+    - `var(--emphasizedButtonBackground)`: Primary CTA button fill.
+    - `var(--buttonForeground)`: High-contrast text and icon color on button surfaces.
+    - `var(--itemHoverBackground)`: List items, table rows, and menu hover fill.
+    - `var(--itemSelectedBackground)`: Selected list item and menu highlight.
+  - **Alerts & Status Feedback**:
+    - `var(--alertRedBackground)` / `var(--alertRedForeground)`: Critical errors and destructive alerts.
+    - `var(--alertGreenBackground)` / `var(--alertGreenForeground)`: Success confirmations and online status.
+    - `var(--alertAmberBackground)` / `var(--alertAmberForeground)`: Warnings, cautions, and pending states.
+    - `var(--alertGrayBackground)` / `var(--alertGrayForeground)`: Neutral notifications and informational badges.
+- **GIS Design Principles**: Keep UI chrome neutral and subdued so the GIS map canvas remains the focal point. Ensure WCAG AA contrast compliance (minimum 4.5:1 for normal text, 3:1 for large text) across both light and dark theme modes.
+
+## 3. Component Architecture & Lifecycle
+- **`<LayoutElement {...props}>` Root**: Every React component view MUST wrap all JSX within `<LayoutElement {...props}>` from `@vertigis/web/components` for layout slotting and Designer support.
+- **MobX `observer()`**: Wrap all React views that read model observables with `observer()` from `mobx-react-lite`.
+- **`<ErrorBoundary>` Wrapping**: Wrap custom widget contents in an `<ErrorBoundary>` component to isolate runtime faults and protect host application stability.
+- **Lifecycle Cleanup**: All subscriptions, intervals, and MobX reactions initialized in `_onInitialize()` MUST be cleanly disposed in `_onDestroy()`.
+<!-- vertigis-web-sdk:end -->
 ```
